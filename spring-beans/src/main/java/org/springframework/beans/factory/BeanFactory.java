@@ -119,9 +119,9 @@ import org.springframework.lang.Nullable;
  * 4、销毁(Destruction)
  *
  * <ol>
- * <li>BeanNameAware's {@code setBeanName}
+ * <li>BeanNameAware's {@code setBeanName} 重点关注
  * <li>BeanClassLoaderAware's {@code setBeanClassLoader}
- * <li>BeanFactoryAware's {@code setBeanFactory}
+ * <li>BeanFactoryAware's {@code setBeanFactory} 重点关注
  * <li>EnvironmentAware's {@code setEnvironment}
  * <li>EmbeddedValueResolverAware's {@code setEmbeddedValueResolver}
  * <li>ResourceLoaderAware's {@code setResourceLoader}
@@ -130,23 +130,23 @@ import org.springframework.lang.Nullable;
  * (only applicable when running in an application context)
  * <li>MessageSourceAware's {@code setMessageSource}
  * (only applicable when running in an application context)
- * <li>ApplicationContextAware's {@code setApplicationContext}
+ * <li>ApplicationContextAware's {@code setApplicationContext} 重点关注
  * (only applicable when running in an application context)
  * <li>ServletContextAware's {@code setServletContext}
  * (only applicable when running in a web application context)
- * <li>{@code postProcessBeforeInitialization} methods of BeanPostProcessors
+ * <li>{@code postProcessBeforeInitialization} methods of BeanPostProcessors  重点关注
  * <li>InitializingBean's {@code afterPropertiesSet}
  * <li>a custom init-method definition
- * <li>{@code postProcessAfterInitialization} methods of BeanPostProcessors
+ * <li>{@code postProcessAfterInitialization} methods of BeanPostProcessors 重点关注
  * </ol>
  *
  * <p>On shutdown of a bean factory, the following lifecycle methods apply:
  * <ol>
  * <li>{@code postProcessBeforeDestruction} methods of DestructionAwareBeanPostProcessors
- * <li>DisposableBean's {@code destroy}
+ * <li>DisposableBean's {@code destroy} 重点关注
  * <li>a custom destroy-method definition
  * </ol>
- *
+ * 代表着bean的生命周期，我们主要记住的是【重点关注】的接口, 再结合spring的源码来看这些接口主要是在哪里调用的
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Chris Beams

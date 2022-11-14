@@ -101,6 +101,17 @@ import org.springframework.util.StringValueResolver;
  * respectively. Default implementations of those operations can be found in
  * {@link DefaultListableBeanFactory} and {@link AbstractAutowireCapableBeanFactory}.
  *
+ * BeanFactory实现的抽象基类，提供可配置BeanFactor SPI的全部功能。
+ * 不假设有一个可列出的bean工厂：因此也可以用作bean工厂实现的基类，这些实现从一些后端资源获取bean定义
+ * （其中bean定义访问是一项昂贵的操作）。 这个类提供了一个单例缓存（通过其基类DefaultSingletonBeanRegistry、
+ * 单例/原型确定、FactoryBean处理、别名、子bean定义的bean定义合并以及bean销毁
+ * （org.springframework.beans.factory.DisposableBean接口、自定义销毁方法）。
+ * 此外，它可以通过实现org.springframework.beans.factory来管理bean工厂层次结构
+ * （在未知bean的情况下委托给父级）。分层BeanFactory接口。
+ * 子类要实现的主要模板方法是getBeanDefinition和createBean，
+ * 分别检索给定bean名称的bean定义和为给定bean定义创建bean实例。
+ * 这些操作的默认实现可以在DefaultListableBeanFactory和AbstractAutowireCapableBeanFactory中找到。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Costin Leau
@@ -1209,6 +1220,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * and populate bean instances.
 	 * <p>The default implementation delegates to {@link #registerCustomEditors}.
 	 * Can be overridden in subclasses.
+	 *
+	 * 使用此工厂注册的自定义编辑器初始化给定的BeanWrapper。为将创建和填充bean实例的BeanWrapper调用。
+	 * 默认实现委托给registerCustomEditors。可以在子类中重写。
+	 *
 	 * @param bw the BeanWrapper to initialize
 	 */
 	protected void initBeanWrapper(BeanWrapper bw) {
@@ -1446,6 +1461,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * Resolve the bean class for the specified bean definition,
 	 * resolving a bean class name into a Class reference (if necessary)
 	 * and storing the resolved Class in the bean definition for further use.
+	 *
+	 * 解析指定bean定义的bean类，将bean类名解析为class引用（如果需要），并将解析的class存储在bean定义中以供进一步使用。
+	 *
 	 * @param mbd the merged bean definition to determine the class for
 	 * @param beanName the name of the bean (for error handling purposes)
 	 * @param typesToMatch the types to match in case of internal type matching purposes

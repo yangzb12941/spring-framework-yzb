@@ -60,13 +60,20 @@ import org.springframework.util.StringUtils;
  * A Groovy-based reader for Spring bean definitions: like a Groovy builder,
  * but more of a DSL for Spring configuration.
  *
+ * Springbean定义的基于Groovy的读取器：类似于Groovybuilder，但更像Spring配置的DSL。
+ *
  * <p>This bean definition reader also understands XML bean definition files,
  * allowing for seamless mixing and matching with Groovy bean definition files.
+ *
+ * 这个bean定义阅读器还可以解析 XML Bean定义文件，从而允许与Groovy bean定义文件无缝混合和匹配。
  *
  * <p>Typically applied to a
  * {@link org.springframework.beans.factory.support.DefaultListableBeanFactory}
  * or a {@link org.springframework.context.support.GenericApplicationContext},
  * but can be used against any {@link BeanDefinitionRegistry} implementation.
+ * 通常应用于｛@link org.springframework.beans.factory.support.DefaultListableBeanFactory｝或
+ * ｛@link org.springframework.context.support.GenericApplicationContext｝，
+ * 但可用于任何｛@链接BeanDefinitionRegistry｝实现。
  *
  * <h3>Example Syntax</h3>
  * <pre class="code">
@@ -96,6 +103,9 @@ import org.springframework.util.StringUtils;
  * either the {@link #loadBeanDefinitions(Resource...)} or
  * {@link #loadBeanDefinitions(String...)} method, with a script looking similar to
  * the following.
+ *
+ * 您还可以使用｛@link loadBeanDefinitions（Resource…）｝或
+ * ｛@link loadBean Definition（String…）｝｝方法加载包含Groovy脚本中定义的bean的资源，脚本如下所示。
  *
  * <pre class="code">
  * import org.hibernate.SessionFactory
@@ -140,6 +150,8 @@ public class GroovyBeanDefinitionReader extends AbstractBeanDefinitionReader imp
 	/**
 	 * Groovy DSL {@code XmlBeanDefinitionReader} for loading bean definitions
 	 * via the Groovy DSL, typically configured with XML validation disabled.
+	 *
+	 * Groovy DSL｛@code XmlBeanDefinitionReader｝用于通过GroovyDSL加载bean定义，通常配置为禁用XML验证。
 	 */
 	private final XmlBeanDefinitionReader groovyDslXmlBeanDefinitionReader;
 

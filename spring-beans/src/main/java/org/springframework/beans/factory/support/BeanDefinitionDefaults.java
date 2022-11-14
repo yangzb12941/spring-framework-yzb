@@ -21,6 +21,10 @@ import org.springframework.util.StringUtils;
 
 /**
  * A simple holder for {@code BeanDefinition} property defaults.
+ * ｛@code BeanDefinition｝属性默认值的简单持有者。
+ * 换句话说:
+ * Spring 通过解析bean元信息，在内存中表示这些配置元信息的方式就是BeanDefinition，
+ * 这里我们只是需要知道配置元信息被加载到内存之后是以BeanDefinition的形存在的
  *
  * @author Mark Fisher
  * @author Juergen Hoeller
@@ -33,6 +37,7 @@ public class BeanDefinitionDefaults {
 
 	private int autowireMode = AbstractBeanDefinition.AUTOWIRE_NO;
 
+	//依赖性检查
 	private int dependencyCheck = AbstractBeanDefinition.DEPENDENCY_CHECK_NONE;
 
 	@Nullable
@@ -46,6 +51,8 @@ public class BeanDefinitionDefaults {
 	 * Set whether beans should be lazily initialized by default.
 	 * <p>If {@code false}, the bean will get instantiated on startup by bean
 	 * factories that perform eager initialization of singletons.
+	 *
+	 * 设置默认情况下是否应延迟初始化bean。 如果为false，bean将在启动时由bean工厂实例化，bean工厂执行单例的急切初始化。
 	 */
 	public void setLazyInit(boolean lazyInit) {
 		this.lazyInit = lazyInit;
@@ -55,6 +62,7 @@ public class BeanDefinitionDefaults {
 	 * Return whether beans should be lazily initialized by default, i.e. not
 	 * eagerly instantiated on startup. Only applicable to singleton beans.
 	 * @return whether to apply lazy-init semantics ({@code false} by default)
+	 * 返回默认情况下是否应延迟初始化bean，即在启动时不急于实例化。仅适用于单例bean。
 	 */
 	public boolean isLazyInit() {
 		return (this.lazyInit != null && this.lazyInit.booleanValue());
@@ -65,6 +73,7 @@ public class BeanDefinitionDefaults {
 	 * eagerly instantiated on startup. Only applicable to singleton beans.
 	 * @return the lazy-init flag if explicitly set, or {@code null} otherwise
 	 * @since 5.2
+	 * 返回默认情况下是否应延迟初始化bean，即在启动时不急于实例化。仅适用于单例bean。
 	 */
 	@Nullable
 	public Boolean getLazyInit() {

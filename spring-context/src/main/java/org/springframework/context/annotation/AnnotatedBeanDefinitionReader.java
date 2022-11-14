@@ -46,6 +46,8 @@ import org.springframework.util.Assert;
  * @since 3.0
  * @see AnnotationConfigApplicationContext#register
  */
+// 注解bean 元信息的读取。bean 可以通过 xml、properties 配置文件形式配置，也可以通过注解的方式。
+// 当前 AnnotatedBeanDefinitionReader 就是解析通过注解的方式配置bean。
 public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;

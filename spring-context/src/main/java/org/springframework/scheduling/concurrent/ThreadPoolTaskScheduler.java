@@ -380,7 +380,6 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 		return TaskUtils.decorateTaskWithErrorHandler(task, this.errorHandler, isRepeatingTask);
 	}
 
-
 	private static class DelegatingErrorHandlingCallable<V> implements Callable<V> {
 
 		private final Callable<V> delegate;

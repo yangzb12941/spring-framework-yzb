@@ -183,41 +183,52 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	private long startupDate;
 
 	/** Flag that indicates whether this context is currently active. */
+	// 指示此上下文当前是否处于活动状态的标志。spring 容器是否已启用
 	private final AtomicBoolean active = new AtomicBoolean();
 
 	/** Flag that indicates whether this context has been closed already. */
+	// 指示此上下文当前是否处于活动状态的标志。spring 容器是否已停用
 	private final AtomicBoolean closed = new AtomicBoolean();
 
 	/** Synchronization monitor for the "refresh" and "destroy". */
+	//用于“刷新”和“销毁”的同步监视器
 	private final Object startupShutdownMonitor = new Object();
 
 	/** Reference to the JVM shutdown hook, if registered. */
+	//如果已注册，则引用JVM关闭挂钩。
 	@Nullable
 	private Thread shutdownHook;
 
 	/** ResourcePatternResolver used by this context. */
+	//此上下文使用的ResourcePatternResolver。
 	private ResourcePatternResolver resourcePatternResolver;
 
 	/** LifecycleProcessor for managing the lifecycle of beans within this context. */
+	//LifecycleProcessor，用于在此上下文中管理bean的生命周期。
 	@Nullable
 	private LifecycleProcessor lifecycleProcessor;
 
 	/** MessageSource we delegate our implementation of this interface to. */
+	//我们将此接口的实现委托给的MessageSource
 	@Nullable
 	private MessageSource messageSource;
 
 	/** Helper class used in event publishing. */
+	//事件发布中使用的助手类
 	@Nullable
 	private ApplicationEventMulticaster applicationEventMulticaster;
 
 	/** Statically specified listeners. */
+	//静态指定的侦听器。
 	private final Set<ApplicationListener<?>> applicationListeners = new LinkedHashSet<>();
 
 	/** Local listeners registered before refresh. */
+	//容器刷新之前本地监听器注册
 	@Nullable
 	private Set<ApplicationListener<?>> earlyApplicationListeners;
 
 	/** ApplicationEvents published before the multicaster setup. */
+	//在多主机设置之前发布的ApplicationEvents。
 	@Nullable
 	private Set<ApplicationEvent> earlyApplicationEvents;
 
@@ -225,6 +236,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Create a new AbstractApplicationContext with no parent.
 	 */
+	// 创建没有父级的新AbstractApplicationContext。
 	public AbstractApplicationContext() {
 		this.resourcePatternResolver = getResourcePatternResolver();
 	}
@@ -233,6 +245,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Create a new AbstractApplicationContext with the given parent context.
 	 * @param parent the parent context
 	 */
+	// 使用给定的父上下文创建新的AbstractApplicationContext。
 	public AbstractApplicationContext(@Nullable ApplicationContext parent) {
 		this();
 		setParent(parent);
@@ -241,6 +254,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	//---------------------------------------------------------------------
 	// Implementation of ApplicationContext interface
+	// ApplicationContext接口的实现
 	//---------------------------------------------------------------------
 
 	/**
@@ -249,6 +263,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * of the context bean if the context is itself defined as a bean.
 	 * @param id the unique id of the context
 	 */
+	// 设置此应用程序上下文的唯一id。默认值是上下文实例的对象id，如果上下文本身定义为bean，则为上下文bean的名称
 	@Override
 	public void setId(String id) {
 		this.id = id;
@@ -269,6 +284,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Typically done during initialization of concrete context implementations.
 	 * <p>Default is the object id of the context instance.
 	 */
+	//为此上下文设置友好名称。通常在具体上下文实现的初始化期间完成。默认值是上下文实例的对象id。
 	public void setDisplayName(String displayName) {
 		Assert.hasLength(displayName, "Display name must not be empty");
 		this.displayName = displayName;
@@ -286,6 +302,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Return the parent context, or {@code null} if there is no parent
 	 * (that is, this context is the root of the context hierarchy).
+	 * 也就是说，这个上下文是上下文层次结构的根
 	 */
 	@Override
 	@Nullable
@@ -299,6 +316,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * default with this method is one option but configuration through {@link
 	 * #getEnvironment()} should also be considered. In either case, such modifications
 	 * should be performed <em>before</em> {@link #refresh()}.
+	 *
+	 * 为此应用程序上下文设置{@code Environment}。默认值由{@link#createEnvironment（）}确定。
+	 * 用此方法替换默认值是一个选项，但还应考虑通过{@link#getEnvironment（）}进行配置。
+	 * 无论哪种情况，都应在<em>{@link#refresh（）}之前<em>执行此类修改。
+	 *
 	 * @see org.springframework.context.support.AbstractApplicationContext#createEnvironment
 	 */
 	@Override
@@ -580,6 +602,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Prepare this context for refreshing, setting its startup date and
 	 * active flag as well as performing any initialization of property sources.
+	 * 准备此上下文以进行刷新、设置其启动日期和活动标志以及执行属性源的任何初始化。
 	 */
 	protected void prepareRefresh() {
 		// Switch to active.
@@ -969,6 +992,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Close this application context, destroying all beans in its bean factory.
 	 * <p>Delegates to {@code doClose()} for the actual closing procedure.
 	 * Also removes a JVM shutdown hook, if registered, as it's not needed anymore.
+	 *
+	 *关闭此应用程序上下文，销毁其bean工厂中的所有bean。
+	 *委托{@code doClose（）}执行实际的关闭过程。
+	 *还删除了JVM关闭挂钩（如果已注册），因为不再需要它。
+	 *
 	 * @see #doClose()
 	 * @see #registerShutdownHook()
 	 */
@@ -978,12 +1006,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			doClose();
 			// If we registered a JVM shutdown hook, we don't need it anymore now:
 			// We've already explicitly closed the context.
+			// 如果我们注册了JVM关闭挂钩，现在就不需要它了：我们已经显式地关闭了上下文。
 			if (this.shutdownHook != null) {
 				try {
 					Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
 				}
 				catch (IllegalStateException ex) {
 					// ignore - VM is already shutting down
+					// 忽略-VM已关闭
 				}
 			}
 		}
@@ -1000,6 +1030,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void doClose() {
 		// Check whether an actual close attempt is necessary...
+		//检查是否需要进行实际的关闭尝试。。。
 		if (this.active.get() && this.closed.compareAndSet(false, true)) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Closing " + this);

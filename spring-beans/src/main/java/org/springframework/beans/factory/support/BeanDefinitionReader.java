@@ -24,19 +24,29 @@ import org.springframework.lang.Nullable;
 /**
  * Simple interface for bean definition readers.
  * Specifies load methods with Resource and String location parameters.
+ * bean定义读取器的简单接口。使用Resource和String位置参数指定加载方法。
  *
  * <p>Concrete bean definition readers can of course add additional
  * load and register methods for bean definitions, specific to
  * their bean definition format.
+ * 具体的bean定义阅读器当然可以为bean定义添加额外的加载和注册方法，具体到bean定义格式。
  *
  * <p>Note that a bean definition reader does not have to implement
  * this interface. It only serves as suggestion for bean definition
  * readers that want to follow standard naming conventions.
  *
+ * 请注意，bean定义读取器不必实现此接口。它只为希望遵循标准命名约定的bean定义读者提供建议。
+ *
  * @author Juergen Hoeller
  * @since 1.1
  * @see org.springframework.core.io.Resource
  */
+// 如果我们要读取xml配置元信息，那么可以使用XmlBeanDefinitionReader。
+// 如果我们要读取properties配置文件，那么可以使用PropertiesBeanDefinitionReader加载。
+// 而如果我们要读取注解配置元信息，那么可以使用 AnnotatedBeanDefinitionReader加载。
+// 我们也可以很方便的自定义BeanDefinitionReader来自己控制配置元信息的加载。
+// 假如我们的配置元信息现有的不能满足，那么我们可以自定义From BeanDefinitionReader
+// 总的来说，BeanDefinitionReader的作用就是加载配置元信息，并将其转化为内存形式的BeanDefinition，存在某一个地方
 public interface BeanDefinitionReader {
 
 	/**
