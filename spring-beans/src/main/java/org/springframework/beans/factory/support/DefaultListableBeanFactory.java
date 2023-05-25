@@ -118,6 +118,14 @@ import org.springframework.util.StringUtils;
  * @see #addBeanPostProcessor
  * @see #getBean
  * @see #resolveDependency
+ *
+ * XmlBeanFactory 继承向 DefaultListableBeanFacto1y ，而 DefaultListableBeanFactmy 是整个 bean
+ * 加载的核心部分，是 Spring 注册及加载 巳an 的默认实现，而对于 Xm!BeanFactory
+ * DefaultListableBeanFactory 同的地方其实是在 XmlBeanFactory 中使用了自定义的 XML 读取器
+ * XmlBeanDefinitionReader ，实现了个性化的 BeanDefinitionReader 卖取， DefaultListableBeanFacto1y
+ * 继承了 AbstractA utowireCapab l eBeanF actory 并实现了 ConfigurableListableBeanFacto可以
+ * BeanDefinitionRegistry 接口。
+ *
  */
 @SuppressWarnings("serial")
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory

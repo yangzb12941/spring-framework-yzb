@@ -112,6 +112,8 @@ import org.springframework.util.StringValueResolver;
  * 分别检索给定bean名称的bean定义和为给定bean定义创建bean实例。
  * 这些操作的默认实现可以在DefaultListableBeanFactory和AbstractAutowireCapableBeanFactory中找到。
  *
+ * 综合 FactoryBeanRegistrySupport 和 ConfigurableBeanFactory功能
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Costin Leau

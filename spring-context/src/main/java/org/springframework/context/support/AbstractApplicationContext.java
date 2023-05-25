@@ -216,7 +216,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/** Helper class used in event publishing. */
 	//事件发布中使用的助手类
 	@Nullable
-	private ApplicationEventMulticaster applicationEventMulticaster;
+	private ApplicationEventMulticaster OncePerRequestFilter;
 
 	/** Statically specified listeners. */
 	//静态指定的侦听器。
@@ -376,6 +376,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * implementations cannot publish events.
 	 * @param event the event to publish (may be application-specific or a
 	 * standard framework event)
+	 * 将给定事件发布给所有侦听器<p> 注意：侦听器在MessageSource之后进行初始化，
+	 * 以便能够在侦听器实现中访问它。因此，MessageSource实现无法发布事件
+	 * @param event 要发布的事件（可以是特定于应用程序的事件或标准框架事件）
 	 */
 	@Override
 	public void publishEvent(ApplicationEvent event) {
@@ -422,6 +425,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			this.earlyApplicationEvents.add(applicationEvent);
 		}
 		else {
+			// 其中一个实现类：SimpleApplicationEventMulticaster
 			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
 		}
 

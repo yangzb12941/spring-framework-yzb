@@ -147,6 +147,8 @@ import org.springframework.lang.Nullable;
  * <li>a custom destroy-method definition
  * </ol>
  * 代表着bean的生命周期，我们主要记住的是【重点关注】的接口, 再结合spring的源码来看这些接口主要是在哪里调用的
+ * 定义获取 bean 及 bean 的各种属性
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Chris Beams

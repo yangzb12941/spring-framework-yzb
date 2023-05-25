@@ -26,6 +26,9 @@ import org.springframework.lang.Nullable;
  * factories that allow setting the parent in a configurable
  * fashion can be found in the ConfigurableBeanFactory interface.
  *
+ * 继承 BeanFactory ，也就是在 BeanFactory 定义的功能的基础
+ * 上增加了对 parentFactory 支持
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 07.07.2003

@@ -64,6 +64,10 @@ public class DefaultDocumentLoader implements DocumentLoader {
 	/**
 	 * Load the {@link Document} at the supplied {@link InputSource} using the standard JAXP-configured
 	 * XML parser.
+	 * 通过 SAX解析XML 文档的 路大致都差不多。Spring 在这里并没有什么特殊的地方，
+	 * 同样首先创建 DocumentBuilderFactory ，再通DocumentBuilderFactory 创建 DocumentBuilder ，进而解析 inputSource 来返回 Document对象。
+	 * 对此感兴趣的读者可以在网上获取更多的资料。这里有必要提及一下EntityResolver，对于参数
+	 * entityResolver ，传入的是通过 getEntityResolver（）函数获取的返回值
 	 */
 	@Override
 	public Document loadDocument(InputSource inputSource, EntityResolver entityResolver,

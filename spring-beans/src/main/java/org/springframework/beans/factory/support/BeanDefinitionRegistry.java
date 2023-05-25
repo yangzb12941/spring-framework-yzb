@@ -40,6 +40,8 @@ import org.springframework.core.AliasRegistry;
  * and GenericApplicationContext.
  * <p> Spring的bean定义阅读器希望处理此接口的实现。Spring核心中的已知实现者是DefaultListableBeanFactory和GenericApplicationContext。
  *
+ * 定义对 BeanDefinition 的各种增删改操作
+ *
  * @author Juergen Hoeller
  * @since 26.11.2003
  * @see org.springframework.beans.factory.config.BeanDefinition

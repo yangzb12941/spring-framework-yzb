@@ -89,10 +89,19 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * (or DTD, historically).
 	 * <p>Opens a DOM Document; then initializes the default settings
 	 * specified at the {@code <beans/>} level; then parses the contained bean definitions.
+	 *
+	 * 其中的参数doc是通过loadDocument加载转换出来的。在这个方法中很好地应用
+	 * 了面向对象中单一职责的原则，将逻辑处理委托给单一的类进行处理，而这个逻辑处理类就是
+	 * BeanDefinitionDocumentReader。BeanDefinitionDocumentReader是一个接口，而实例化的工作是在
+	 * createBeanDefinitionDocumentReader()中完成的，而通过此方法，BeanDefinitionDocumentReader真正
+	 * 的类型其实已经是 DefaultBeanDefinitionDocumentReader 了，进入DefaultBeanDefinitionDocumentReader后，
+	 * 发现这个方法的重要目的之一就是提取root，以便于再次将root作为参数继续
+	 * BeanDefinition的注册
 	 */
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
+		//Element root = doc.getDocumentElement();
 		doRegisterBeanDefinitions(doc.getDocumentElement());
 	}
 
@@ -125,6 +134,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		// the new (child) delegate with a reference to the parent for fallback purposes,
 		// then ultimately reset this.delegate back to its original (parent) reference.
 		// this behavior emulates a stack of delegates without actually necessitating one.
+
+		// 任何嵌套的＜beans＞元素都将导致此方法中的递归。为了正确传播和保存＜beans＞默认属性，
+		// 请跟踪当前（父）委托，该委托可能为空。创建新的（子）委托，并将其引用到父级以进行回退，
+		// 然后最终将this.delegate重置回其原始（父级）引用。这种行为模拟一堆委托，而实际上不需要委托。
 		BeanDefinitionParserDelegate parent = this.delegate;
 		this.delegate = createDelegate(getReaderContext(), root, parent);
 

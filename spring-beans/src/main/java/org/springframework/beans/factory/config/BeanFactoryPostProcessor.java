@@ -82,7 +82,7 @@ import org.springframework.beans.BeansException;
 //    <property name="password" value="${jdbc.password}"></property>
 //</bean>
 // 至此，整个容器启动阶段就算完成了，容器的【启动阶段】的最终产物就是注册到BeanDefinitionRegistry中的一个个BeanDefinition了，
-// 这就是Spring为Bean实例化`所做的预热的工作。
+// 这就是Spring为Bean实例化所做的预热的工作。
 // 容器启动阶段做了哪些操作:
 //                                         开始
 //               	                        |

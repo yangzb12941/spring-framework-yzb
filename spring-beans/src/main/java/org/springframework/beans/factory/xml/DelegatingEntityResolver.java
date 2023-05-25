@@ -84,9 +84,15 @@ public class DelegatingEntityResolver implements EntityResolver {
 
 		if (systemId != null) {
 			if (systemId.endsWith(DTD_SUFFIX)) {
+				//如果是dtd从这里解析
+				//我们可以看到，对不同的验证模式，spring使用了不同的解析器解析。这里简单描述一下
+				//原理，比如加载DTD类型的BeansDtdResolver的resolveEntity是直接截取systemId最后的xx.dtd然后去当前路径下寻找，
 				return this.dtdResolver.resolveEntity(publicId, systemId);
 			}
 			else if (systemId.endsWith(XSD_SUFFIX)) {
+				//通过调用META-INF/Spring.schemas解析
+				// 而加载XSD类型的PluggableSchemaResolver类的resolveEntity是默
+				// 认到META-INF/Spring-schemas文件中找到systemId所对应的XSD文件并加载。
 				return this.schemaResolver.resolveEntity(publicId, systemId);
 			}
 		}

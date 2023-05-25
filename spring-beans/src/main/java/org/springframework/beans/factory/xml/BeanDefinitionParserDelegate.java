@@ -73,6 +73,8 @@ import org.springframework.util.xml.DomUtils;
  * {@link BeanDefinitionParser BeanDefinitionParsers} or
  * {@link BeanDefinitionDecorator BeanDefinitionDecorators}.
  *
+ * 定义解析 Element 的各种方法
+ *
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @author Rod Johnson

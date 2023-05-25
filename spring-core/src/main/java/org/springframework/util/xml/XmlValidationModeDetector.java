@@ -76,6 +76,7 @@ public class XmlValidationModeDetector {
 
 	/**
 	 * Indicates whether or not the current parse position is inside an XML comment.
+	 * 指示当前分析位置是否在XML注释内.
 	 */
 	private boolean inComment;
 
@@ -96,6 +97,7 @@ public class XmlValidationModeDetector {
 			String content;
 			while ((content = reader.readLine()) != null) {
 				content = consumeCommentTokens(content);
+				//如果读取的行是空或者是注释则略过
 				if (this.inComment || !StringUtils.hasText(content)) {
 					continue;
 				}
@@ -103,6 +105,7 @@ public class XmlValidationModeDetector {
 					isDtdValidated = true;
 					break;
 				}
+				//读取到<开始符号，验证模式一定会在开始符之前
 				if (hasOpeningTag(content)) {
 					// End of meaningful data...
 					break;

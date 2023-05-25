@@ -61,6 +61,8 @@ import org.springframework.util.StringUtils;
  * (which inherit from it). Can alternatively also be used as a nested
  * helper to delegate to.
  *
+ *  对接口 SingletonBeanRegistry 各函数的实现
+ *
  * @author Juergen Hoeller
  * @since 2.0
  * @see #registerSingleton
@@ -187,15 +189,21 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		//先从一级缓存拿
 		Object singletonObject = this.singletonObjects.get(beanName);
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
 			synchronized (this.singletonObjects) {
+				//再从二级缓存拿
 				singletonObject = this.earlySingletonObjects.get(beanName);
 				if (singletonObject == null && allowEarlyReference) {
+					//最后从三级缓存拿
 					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 					if (singletonFactory != null) {
+						//最终调用的传入的匿名内部类getEarlyReference()方法
 						singletonObject = singletonFactory.getObject();
+						//放入二级缓存
 						this.earlySingletonObjects.put(beanName, singletonObject);
+						//从三级缓存移除
 						this.singletonFactories.remove(beanName);
 					}
 				}

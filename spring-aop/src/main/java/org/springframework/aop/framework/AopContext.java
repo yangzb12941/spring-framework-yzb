@@ -62,6 +62,10 @@ public final class AopContext {
 	 * @throws IllegalStateException if the proxy cannot be found, because the
 	 * method was invoked outside an AOP invocation context, or because the
 	 * AOP framework has not been configured to expose the proxy
+	 *
+	 * 尝试返回当前AOP代理。只有当通过AOP调用了调用方法，并且AOP框架已设置为公开代理时，
+	 * 此方法才可用。否则，此方法将引发IllegalStateException。
+	 *
 	 */
 	public static Object currentProxy() throws IllegalStateException {
 		Object proxy = currentProxy.get();

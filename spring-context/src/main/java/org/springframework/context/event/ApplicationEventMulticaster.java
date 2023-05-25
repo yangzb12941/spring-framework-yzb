@@ -82,6 +82,9 @@ public interface ApplicationEventMulticaster {
 	 * @param event the event to multicast
 	 * @param eventType the type of event (can be {@code null})
 	 * @since 4.2
+	 *
+	 * 将给定的应用程序事件多播到适当的侦听器<p> 如果｛@code eventType｝
+	 * 为｛@ccode null｝，则基于｛@codeevent｝实例构建默认类型。
 	 */
 	void multicastEvent(ApplicationEvent event, @Nullable ResolvableType eventType);
 

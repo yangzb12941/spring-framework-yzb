@@ -65,6 +65,13 @@ import org.springframework.util.xml.XmlValidationModeDetector;
  * talking to the latter's implementation of the
  * {@link org.springframework.beans.factory.support.BeanDefinitionRegistry} interface.
  *
+ * 1. 通过继 AbstractBeanDefinitionReader 中的方法，来使用 ResourceLoader 将资源文件
+ * 路径转换为对应的 Resource 文件
+ * 2. 通过 DocumentLoader 对 Resource 文件进行转换，将 Resource 文件转换为 Document
+ * 文件
+ * 3. 通过实现接口 BeanDefinitionDocumentReader的 DefaultBeanDefinitionDocumentReader类对
+ * Document 进行解析，并使用 BeanDefinitionParserDelegate 对 Element 进行解析。
+ *
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @author Chris Beams
@@ -256,6 +263,53 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	/**
 	 * Return the EntityResolver to use, building a default resolver
 	 * if none specified.
+	 *
+	 * 在loadDocument方法中涉及一个参数EntityResolver，何为EntityResolver？
+	 * 官网这样解释：
+	 * 如果SAX应用程序需要实现自定义处理外部实体，则必须实现此接口并使用setEntityResolver
+	 * 方法向SAX驱动器注册一个实例。
+	 * 也就是说，对于解析一个XML，SAX首先读取该XML文档上的声明，根据声明去寻找相应的DTD定义，以便对文档进行一个验证。
+	 * 默认的寻找规则，即通过网络（实现上就是声明的DTD的URI地址）来下载相应的DTD声明，并进行认证。
+	 *
+	 * 下载的过程是一个漫长的过程，而且当网络中断或不可用时，这里会报错，就是因为相应的DTD
+	 * 声明没有被找到的原因。
+	 *
+	 * EntityResolver的作用是项目本身就可以提供一个如何寻找DTD声明的方法，即由程序来
+	 * 实现寻找DTD声明的过程，比如我们将DTD文件放到项目中某处，在实现时直接将此文档读
+	 * 取并返回给SAX即可。这样就避免了通过网络来寻找相应的声明。
+	 * 首先看entityResolver的接口方法声明：
+	 * InputSource resolveEntity (String publicId,String systemId)
+	 * 1、如果我们在解析验证模式为XSD的配置文件,代码如下：
+	 * <?xml version="l0" encodxng="UTE—B"？>
+	 * <beans xmlns—"http://www.Springframework.org/schema/beans"
+	 *        xmlns:xsi="http://www.w3.Org/2001/XMLSchema—instance"
+	 *        xsi:schemaLocation="http://www.Springframework.org/schema/beans
+	 *                            http://www.springframework.org/schema/beans/spring-beans.xsd">
+	 * 	...
+	 * </beans>
+	 * 读取到以下两个参数
+	 * publicId: null
+	 * systemId: http://www.springfamework.org/schemabeans/Spring-beans.xsd
+	 *
+	 * 2. 如果我们在解析验证模式为 DTD 的配置文件，代码如下：
+	 *<?xml version="l.0" encoding="UTF—8"?>
+	 * <！DOCTYPE beans PUBLIC "-//Spring//DTD//BEAN2.0//EN" "http://www·Springframework.org/dtd/Spring—beans—2.0.dtd">
+	 * <beans>
+	 * ...
+	 * </beans>
+	 * 读取到以下两个参数：
+	 * publicId: -//Spring/DTD BEAN 2.0//EN
+	 * systemId: http://www.springframework.org/dtd/Spring-beans-2.0.dtd
+	 *
+	 * 之前已经提到过,验证文件默认的加载方式是通过URL进行网络下载获取，这样会造成
+	 * 延迟，用户体验也不好，一般的做法都是将验证文件放置在自己的工程里，那么怎么做才能将
+	 * 这个URL转换为自己工程里对应的地址文件呢？
+	 *
+	 * 我们以加载DTD文件为例来看看spring中是如何实现的。
+	 * 根据之前Spring中通过getEntityResolver()方法对EntityResolver的获取，我们知
+	 * 道，Spring中使用DelegatingEntityResolver类为EntityResolver的实现类，resolveEntity实现方
+	 * 法如下：
+	 * org.springframework.beans.factory.xml.DelegatingEntityResolver#resolveEntity(java.lang.String, java.lang.String)
 	 */
 	protected EntityResolver getEntityResolver() {
 		if (this.entityResolver == null) {
@@ -302,6 +356,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 */
 	@Override
 	public int loadBeanDefinitions(Resource resource) throws BeanDefinitionStoreException {
+		//用EncodedResource 封装resource
+		//这个类主要是用于对资服文件的编码进行处理的。其中的主要逻辑体现在 getRead()方法中， 当设置了编码属性
+		//的时候 Spring 会使用相应的编码作为输入流的编码
 		return loadBeanDefinitions(new EncodedResource(resource));
 	}
 
@@ -317,7 +374,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Loading XML bean definitions from " + encodedResource);
 		}
-
+		//通过属性来记录已经加载的资源
 		Set<EncodedResource> currentResources = this.resourcesCurrentlyBeingLoaded.get();
 		if (currentResources == null) {
 			currentResources = new HashSet<>(4);
@@ -328,15 +385,20 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"Detected cyclic loading of " + encodedResource + " - check your import definitions!");
 		}
 		try {
+			//获取输入流。从Resource中获取对应的InputStream并构造 InputSource
+			//从 encodedResource 中获取已经封装的Resource对象并再次从Resource中获取其中的inputStream
 			InputStream inputStream = encodedResource.getResource().getInputStream();
 			try {
+				//InputSource 这个类并不来自于 Spring ，它的全路径是org.xml.sax.InputSource
 				InputSource inputSource = new InputSource(inputStream);
 				if (encodedResource.getEncoding() != null) {
 					inputSource.setEncoding(encodedResource.getEncoding());
 				}
+				//真正进入逻辑核心部分
 				return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 			}
 			finally {
+				//关闭流
 				inputStream.close();
 			}
 		}
@@ -390,7 +452,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			throws BeanDefinitionStoreException {
 
 		try {
+			//加载 XML 文件，并得到对应的 Document
 			Document doc = doLoadDocument(inputSource, resource);
+			//根据返回的 Document 注册 Bean 信息
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -446,9 +510,13 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 */
 	protected int getValidationModeForResource(Resource resource) {
 		int validationModeToUse = getValidationMode();
+		//如果手动指定了验证模式则使用指定的验证模式
+		//方法的实现其实还是很简单的，无非是如果设定了验证模式则使用设定的验证模式（可以
+		//通过对调用 XmlBeanDefinitionReader 中的 setValidationMode 方法进行设定）
 		if (validationModeToUse != VALIDATION_AUTO) {
 			return validationModeToUse;
 		}
+		//如果未指定则使用自动检测
 		int detectedMode = detectValidationMode(resource);
 		if (detectedMode != VALIDATION_AUTO) {
 			return detectedMode;
@@ -456,6 +524,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		// Hmm, we didn't get a clear indication... Let's assume XSD,
 		// since apparently no DTD declaration has been found up until
 		// detection stopped (before finding the document's root tag).
+		//嗯，我们没有得到明确的指示...让我们假设XSD，因为在检测停止之前（在找到文档的根标记之前），显然还没有找到DTD声明。
 		return VALIDATION_XSD;
 	}
 
@@ -509,9 +578,14 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+		//使用 DefaultBeanDefinitionDocumentReader 实例化 BeanDefinitionDocumentReader
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+		//在实例化BeanDefinitionDocumentReader时候会将 BeanDefinitionRegistry 传入，默认使用继承自DefaultListableBeanFatory的子类
+		//记录统计前BeanDefinition的加载个数
 		int countBefore = getRegistry().getBeanDefinitionCount();
+		//加载及注册bean
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+		//记录本次加载的 BeanDefinition个数
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 

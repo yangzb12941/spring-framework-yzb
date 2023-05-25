@@ -122,6 +122,8 @@ import org.springframework.util.StringUtils;
  * {@linkBeanDefinitionRegistry}接口的实现，请参见{@link-DefaultListableBean factory]，这些接口表示API和SPI
  * 这类工厂的视图。
  *
+ * 综合 AbstractBeanFactory 并对接口 AutowireCapableBeanFactory 进行实现
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Rob Harrop
@@ -180,7 +182,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	private final NamedThreadLocal<String> currentlyCreatedBean = new NamedThreadLocal<>("Currently created bean");
 
 	/** Cache of unfinished FactoryBean instances: FactoryBean name to BeanWrapper. */
-	//未完成FactoryBean实例的缓存：FactoryBean名称到BeanDrapper。
+	//未完成FactoryBean实例的缓存：FactoryBean名称到BeanWrapper。
 	private final ConcurrentMap<String, BeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<>();
 
 	/** Cache of candidate factory methods per factory class. */
@@ -322,6 +324,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	// 通过ApplicationContextAware的ApplicationContext。
 	//默认情况下，只忽略BeanFactoryAware接口。
 	//要忽略其他类型，请为每个类型调用此方法。
+
+	//这里有必要提及 ignoreDependencyInterface 方法。
+	//ignoreDependencyInterface的主要功能是忽略给定接口的自动装配功能，那么，这样做的目的是什么呢？会产生什么样的效果呢？
+	//举例来说，当A中有属性B，那么当spring在获取A的Bean的时候如果其属性B还没有
+	//初始化，那么spring会自动初始化B，这也是Spring中提供的一个重要特性。但是，某些情况
+	//下，B不会被初始化，其中的一种情况就是B实现了BeanNameAware接口。
+	// Spring中是这样介绍的：自动装配时忽略给定的依赖接口，典型应用是通过其他方式解析Application上下文注
+	//册依赖，类似于BeanFactory通过BeanFactoryAware进行注入或者ApplicationContext通过
+	//ApplicationContextAware进行注入。
 	public void ignoreDependencyInterface(Class<?> ifc) {
 		this.ignoredDependencyInterfaces.add(ifc);
 	}
@@ -1260,7 +1271,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * the target bean. A {@code null} return value from the post-processor will
 	 * result in the target bean being instantiated.
 	 *
-	 * 将InstantiationAwareBeanPostProcessors应用于指定的bean定义（按类和名称），调用其{@code postProcessBeforeInstantiation}方法。
+	 * 将InstantiationAwareBeanPostProcessors(实例化Bean后处理器)应用于指定的bean定义（按类和名称），
+	 * 调用其{@code postProcessBeforeInstantiation}方法。
 	 * 任何返回的对象都将用作bean，而不是实际实例化目标bean。来自后处理器的{@code null}返回值将导致目标bean被实例化。
 	 *
 	 * @param beanClass the class of the bean to be instantiated
