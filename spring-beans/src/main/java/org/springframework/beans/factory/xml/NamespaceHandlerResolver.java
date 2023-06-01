@@ -33,6 +33,13 @@ public interface NamespaceHandlerResolver {
 	/**
 	 * Resolve the namespace URI and return the located {@link NamespaceHandler}
 	 * implementation.
+	 *
+	 * 有了命名空间，就可以进行 NamespaceHandler 的提取了，继续之前的 parseCustomElement 函数的跟踪，
+	 * 分析 NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver.resolve(namespaceUri),
+	 * 在 readerContext 初始化的时候其属性 namespaceHandlerResolver 已经被初始化为了 DefaultNamespaceHandlerResolver 的实例，
+	 * 所以，这里调用的 resolve 方法其实调用的是DefaultNamespaceHandlerResolver 类中的方法。
+	 * 我们进入 DefaultNamespaceHandlerResolver 的resolve 方法进行查看。
+	 *
 	 * @param namespaceUri the relevant namespace URI
 	 * @return the located {@link NamespaceHandler} (may be {@code null})
 	 */

@@ -141,48 +141,76 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private volatile Object beanClass;
 
+	//bean的作用范围，对应bean属性scope
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+	//是否是抽象，对应bean属性abstract
 	private boolean abstractFlag = false;
 
+	//是否延迟加载，对应bean属性lazy-init
 	@Nullable
 	private Boolean lazyInit;
 
+	//自动注入模式，对应bean属性autowire
 	private int autowireMode = AUTOWIRE_NO;
 
+	//依赖检查，Spring 2.0后弃用这个属性
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	//用来表示一个bean 的实例化依靠另一个bean先实例化，对应bean属性depend-on
 	@Nullable
 	private String[] dependsOn;
 
+	//autowire-candidate 属性设置为false，这样容器在查找自动装配对象时，将不考虑该bean，即它不会被考虑作为其他bean自动装配的候选者，
+	//但该bean本身还是可以使用自动装配来注入其他bean的。
 	private boolean autowireCandidate = true;
 
+	//自动装配时当出现多个bean候选者时，将作为首选者，对应bean属性primary
 	private boolean primary = false;
 
+	//用于记录Qualifier,对应子元素 qualifier
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
+	//允许访问非公开的构造器和方法，程序设置
 	private boolean nonPublicAccessAllowed = true;
 
+	//是否一种宽松的模式解析构造函数，默认为true
+	//如果为false 则在如下情况
+	//interface ITest{}
+	//class ITestImpl implements ITest{};
+	//class Main{
+	//   Main(ITest i){}
+	//   Main(ITestImpl i)
+	// }
+	// 抛出异常，因为Spring无法准确定位哪个构造函数
 	private boolean lenientConstructorResolution = true;
 
+	//对应bean属性factory-bean，用法
+	//<bean id="instanceFactoryBean" class="example.chapter3.InstanceFactoryBean"/>
+	//<bean id="currentTime" factory—bean="instanceFactoryBean" factory—method="createTime"/>
 	@Nullable
 	private String factoryBeanName;
 
+	//对应bean属性factory-method
 	@Nullable
 	private String factoryMethodName;
 
+	//记录构造函数注入属性，对应bean属性constructor-arg
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	//普通属性集合
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
+	//方法重写的持有者，记录lookup-method、replaced-method 元素
 	private MethodOverrides methodOverrides = new MethodOverrides();
 
+	//对应bean属性init-method
 	@Nullable
 	private String initMethodName;
 
@@ -193,13 +221,18 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	private boolean enforceDestroyMethod = true;
 
+	//是否用户定义的而不是应用程序本身定义的，创建AOP时候为true，程序设置
 	private boolean synthetic = false;
 
+	//定义这个bean的应用，APPLICATION：用户，INFRASTRUCTURE:完全内部使用与用户无关
+	//SUPPORT:某些复杂配置的一部分
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
+	//bean的描述信息
 	@Nullable
 	private String description;
 
+	//这个bean定义的资源
 	@Nullable
 	private Resource resource;
 
@@ -1119,10 +1152,23 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * Validate and prepare the given method override.
 	 * Checks for existence of a method with the specified name,
 	 * marking it as not overloaded if none found.
+	 *
+	 * 通过以上两个函数的代码你能体会到它所要实现的功能吗?
+	 * 之前反复提到过,在 Spring 配置中存在 lookup-method 和 replace-method 两个配置功能，
+	 * 而这两个配置的加载其实就是将配置统一存放在 BeanDefinition 中的 methodOverrides 属性里，
+	 * 这两个功能实现原理其实是在 bean 实例化的时候如果检测到存在 methodOverrides 属性，
+	 * 会动态地为当前 bean 生成代理并使用对应的拦截器为 bean 做增强处理，相关逻辑实现在 bean 的实例化部分详细介绍。
+	 *
+	 * 但是，这里要提到的是，对于方法的匹配来讲，如果一个类中存在若干个重载方法，那么在函数调用及增强的时候还需要根据参数类型进行匹配，
+	 * 来最终确认当前调用的到底是哪个函数。
+	 * 但是，Spring将一部分匹配工作在这里完成了，如果当前类中的方法只有一个，那么就设置重载该方法没有被重载，
+	 * 这样在后续调用的时候便可以直接使用找到的方法，而不需要进行方法的参数匹配验证了，而且还可以提前对方法存在性进行验证，正可谓一箭双雕。
+	 *
 	 * @param mo the MethodOverride object to validate
 	 * @throws BeanDefinitionValidationException in case of validation failure
 	 */
 	protected void prepareMethodOverride(MethodOverride mo) throws BeanDefinitionValidationException {
+		//获取对应类中对应方法名个数
 		int count = ClassUtils.getMethodCountForName(getBeanClass(), mo.getMethodName());
 		if (count == 0) {
 			throw new BeanDefinitionValidationException(
@@ -1131,6 +1177,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		}
 		else if (count == 1) {
 			// Mark override as not overloaded, to avoid the overhead of arg type checking.
+			//标记 MethodOverride 暂未被覆盖，避免参数类型检查的开销
 			mo.setOverloaded(false);
 		}
 	}

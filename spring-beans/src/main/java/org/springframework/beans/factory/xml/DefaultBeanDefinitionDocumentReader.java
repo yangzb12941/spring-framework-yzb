@@ -134,14 +134,34 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		// the new (child) delegate with a reference to the parent for fallback purposes,
 		// then ultimately reset this.delegate back to its original (parent) reference.
 		// this behavior emulates a stack of delegates without actually necessitating one.
-
 		// 任何嵌套的＜beans＞元素都将导致此方法中的递归。为了正确传播和保存＜beans＞默认属性，
 		// 请跟踪当前（父）委托，该委托可能为空。创建新的（子）委托，并将其引用到父级以进行回退，
 		// 然后最终将this.delegate重置回其原始（父级）引用。这种行为模拟一堆委托，而实际上不需要委托。
+
+		//专门处理解析
 		BeanDefinitionParserDelegate parent = this.delegate;
 		this.delegate = createDelegate(getReaderContext(), root, parent);
 
 		if (this.delegate.isDefaultNamespace(root)) {
+			//处理profile属性
+			//<beans profile="dev">
+			//...
+			//</beans>
+			//<beans profile="production">
+			//...
+			//</beans>
+			//集成到Web环境中时，在web.xml中加入以下代码：
+			//<comtext-param>
+			//  <param-name> Spring.profiles.active</param-name>
+			//  <param-value> dev</param-value>
+			//</comtext-param>
+			//有了这个特性我们就可以同时在配置文件中部署两套配置来适用于生产环境和开发环境，
+			//这样可以方便的进行切换开发、部署环境，最常用的就是更换不同的数据库。
+
+			//了解了profile的使用再来分析代码会清晰得多，首先程序会获取beans节点是否定义了
+			//profile属性，如果定义了则会需要到环境变量中去寻找，所以这里首先断言environment不可
+			//能为空，因为profile是可以同时指定多个的，需要程序对其拆分，并解析每个profile是都符
+			//合环境变量中所定义的，不定义则不会浪费性能去解析。
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
 			if (StringUtils.hasText(profileSpec)) {
 				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
@@ -157,9 +177,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-
+		//解析前处理，留给子类实现
 		preProcessXml(root);
 		parseBeanDefinitions(root, this.delegate);
+		//解析后处理，留给子类实现
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -177,8 +198,14 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * Parse the elements at the root level in the document:
 	 * "import", "alias", "bean".
 	 * @param root the DOM root element of the document
+	 *
+	 * Spring 的xml 配置里面有两大类Bean声明，一个是默认的：
+	 * <bean id="test" class="test.TestBean"></bean>
+	 * 另一类就是自定义的，如：
+	 * <tx:annotation-driven/>
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
+		//对beans的处理
 		if (delegate.isDefaultNamespace(root)) {
 			NodeList nl = root.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {
@@ -186,9 +213,33 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				if (node instanceof Element) {
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
+						//对bean的处理
+						//而两种方式的读取及解析差别是非常大的，如果采用spring默认的配置，spring当然知
+						//道该怎么做，但是如果是自定义的，那么就需要用户实现一些接口及配置了。
+
+						// 对于根节点或者子节点如果是默认命名空间的话则采用parseDefaultElement方法进行解析，否则使用
+						//delegate.parseCustomElement方法对自定义命名空间进行解析。而判断是否默认命名空间还是
+						//自定义命名空间的办法其实是使用node.getNamespaceURI()获取命名空间，并与spring中固
+						//定的命名空间http://www.springframework.org/schema/beans进行比对。如果一致则认为是默
+						//认，否则就认为是自定义。而对于默认标签解析与自定义标签解析我们将会在下一章中进行讨论。
 						parseDefaultElement(ele, delegate);
 					}
 					else {
+						//对bean的处理 自定义标签解析
+						//当 Spring 拿到一个元素时首先要做的是根据命名空间进行解析，
+						//如果是默认的命名空间，则使用 parseDefaultElement 方法进行元素解析，否则使用 parseCustomElement
+						//方法进行解析。
+						//在很多情况下，我们需要为系统提供可配置化支持，简单的做法可以直接基于Spring的标
+						//准bean来配置，但配置较为复杂或者需要更多丰富控制的时候，会显得非常笨拙。一般的做
+						//法会用原生态的方式去解析定义好的XML文件，然后转化为配置对象。这种方式当然可以解
+						//决所有问题，但实现起来比较烦琐，特别是在配置非常复杂的时候，解析工作是一个不得不考
+						//虑的负担。spring提供了可扩展Schema的支持，这是一个不错的折中方案，扩展Spring自定
+						//义标签配置大致需要以下几个步骤（前提是要把Spring的Core包加人项目中）。
+						//1、创建一个需要扩展的组件。
+						//2、定义一个XSD文件描述组件内容。
+						//3、创建一个文件，实现BeanDefinitionParser接口，用来解析XSD文件中的定义和组件定义。
+						//4、创建一个Handler文件，扩展自NamespaceHandlerSupport，目的是将组件注册到Spring容器。
+						//5、编写Spring.handlers和Spring.schemas文件。
 						delegate.parseCustomElement(ele);
 					}
 				}
@@ -200,15 +251,39 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
+		//对import标签的处理
 		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
+			//使用import 是一个好办法，例如我们可以构造如下的Spring配置文件
+			//<?xml version="1.0" encoding="UTF-8"?>
+			//<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "https://www.springframework.org/dtd/spring-beans-2.0.dtd">
+			//  <beans>
+			//    <import resource="customerContext.xml"/>
+			//    <import resource="systemContext.xml"/>
+			//  </beans>
+			//applicationContext.xml文件中使用import的方式导入所有模块配置文件，以后若有新模块的
+			//加入，那就可以简单修改这个文件了。这样大大简化了配置后期维护的复杂度
 			importBeanDefinitionResource(ele);
 		}
+		//对alias标签的处理
+		//别名的配置方式：
+		//1、<bean id="testBean" name="testBean,testBean2" class="com.test"/>
+		//2、<bean id="testBean" class="com.test"/>
+		//   <alias name="testBean" alias="testBean,testBean2"/>
+		//3、考虑一个更为具体的例子，组件A在XML配置文件中定义了一个名为componentA的
+		//Datasource类型的bean，但组件B却想在其XML文件中以componentB命名来引用此bean。
+		//而且在主程序MyApp的XML配置文件中，希望以myApp的名字来引用此bean。最后容器加
+		//载3个XML文件来生成最终的ApplicationContext。在此情形下，可通过在配置文件中添加下
+		//列alias元素来实现：
+		//<alias name="componentA" alias="componentB"/>
+		//<alias name="componentA" alias="myApp"/>
 		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
 			processAliasRegistration(ele);
 		}
+		//对bean标签的处理
 		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
 			processBeanDefinition(ele, delegate);
 		}
+		//对beans标签的处理
 		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {
 			// recurse
 			doRegisterBeanDefinitions(ele);
@@ -218,20 +293,41 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	/**
 	 * Parse an "import" element and load the bean definitions
 	 * from the given resource into the bean factory.
+	 *
+	 * 			//使用import 是一个好办法，例如我们可以构造如下的Spring配置文件
+	 * 			//<?xml version="1.0" encoding="UTF-8"?>
+	 * 			//<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "https://www.springframework.org/dtd/spring-beans-2.0.dtd">
+	 * 			//  <beans>
+	 * 			//    <import resource="customerContext.xml"/>
+	 * 			//    <import resource="systemContext.xml"/>
+	 * 			//  </beans>
+	 * 			//applicationContext.xml文件中使用import的方式导入所有模块配置文件，以后若有新模块的
+	 * 			//加入，那就可以简单修改这个文件了。这样大大简化了配置后期维护的复杂度
+	 *
+	 * 1.获取resource属性所表示的路径。
+	 * 2．解析路径中的系统属性，格式如"S{user.dir}".
+	 * 3．判定location是绝对路径还是相对路径。
+	 * 4．如果是绝对路径则递归调用bean的解析过程，进行另一次的解析。
+	 * 5．如果是相对路径则计算出绝对路径并进行解析。
+	 * 6．通知监听器，解析完成。
 	 */
 	protected void importBeanDefinitionResource(Element ele) {
+		//获取resource属性
 		String location = ele.getAttribute(RESOURCE_ATTRIBUTE);
+		//如果不存在resource属性则不做任何处理
 		if (!StringUtils.hasText(location)) {
 			getReaderContext().error("Resource location must not be empty", ele);
 			return;
 		}
 
 		// Resolve system properties: e.g. "${user.dir}"
+		//解析系统属性，格式如："${user.dir}"
 		location = getReaderContext().getEnvironment().resolveRequiredPlaceholders(location);
 
 		Set<Resource> actualResources = new LinkedHashSet<>(4);
 
 		// Discover whether the location is an absolute or relative URI
+		//判定localtion 是决定URI还是相对URI
 		boolean absoluteLocation = false;
 		try {
 			absoluteLocation = ResourcePatternUtils.isUrl(location) || ResourceUtils.toURI(location).isAbsolute();
@@ -242,6 +338,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 
 		// Absolute or relative?
+		// 如果是绝对URI则直接根据地址加载对应的配置文件
 		if (absoluteLocation) {
 			try {
 				int importCount = getReaderContext().getReader().loadBeanDefinitions(location, actualResources);
@@ -256,14 +353,19 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 		else {
 			// No URL -> considering resource location as relative to the current file.
+			// 如果是相对地址则根据相对地址计算出绝对地址
 			try {
 				int importCount;
+				////Resource存在多个子实现类，如VfsResource、FileSystemResource等，
+				//而每个resource的createRelative方式实现都不一样，所以这里先使用子类的方法尝
+				//试解析
 				Resource relativeResource = getReaderContext().getResource().createRelative(location);
 				if (relativeResource.exists()) {
 					importCount = getReaderContext().getReader().loadBeanDefinitions(relativeResource);
 					actualResources.add(relativeResource);
 				}
 				else {
+					//如果解析不成功，则使用默认的解析器ResourcePatternResolver进行解析。
 					String baseLocation = getReaderContext().getResource().getURL().toString();
 					importCount = getReaderContext().getReader().loadBeanDefinitions(
 							StringUtils.applyRelativePath(baseLocation, location), actualResources);
@@ -280,6 +382,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						"Failed to import bean definitions from relative location [" + location + "]", ele, ex);
 			}
 		}
+		//解析后进行监听器激活处理
 		Resource[] actResArray = actualResources.toArray(new Resource[0]);
 		getReaderContext().fireImportProcessed(location, actResArray, extractSource(ele));
 	}
@@ -288,7 +391,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * Process the given alias element, registering the alias with the registry.
 	 */
 	protected void processAliasRegistration(Element ele) {
+		//获取beanName
 		String name = ele.getAttribute(NAME_ATTRIBUTE);
+		//获取alias
 		String alias = ele.getAttribute(ALIAS_ATTRIBUTE);
 		boolean valid = true;
 		if (!StringUtils.hasText(name)) {
@@ -301,12 +406,14 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 		if (valid) {
 			try {
+				//注册alias
 				getReaderContext().getRegistry().registerAlias(name, alias);
 			}
 			catch (Exception ex) {
 				getReaderContext().error("Failed to register alias '" + alias +
 						"' for bean with name '" + name + "'", ele, ex);
 			}
+			//别名注册后通知监听器做相应处理
 			getReaderContext().fireAliasRegistered(name, alias, extractSource(ele));
 		}
 	}
@@ -314,13 +421,29 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	/**
 	 * Process the given bean element, parsing the bean definition
 	 * and registering it with the registry.
+	 *
+	 * 1.首先委托BeanDefinitionDelegate类的parseBeanDefinitionElement方法进行元素解析，
+	 * 返回BeanDefinitionHolder类型的实例bdHolder，经过这个方法后，bdHolder实例已经包含我
+	 * 们配置文件中配置的各种属性了，例如class、name、id、alias之类的属性。
+	 *
+	 * 2．当返回的bdHolder不为空的情况下若存在默认标签的子节点下再有自定义属性，还需要
+	 * 再次对自定义标签进行解析。
+	 *
+	 * 3．解析完成后，需要对解析后的bdHolder进行注册，同样，注册操作委托给了BeanDefinitionReaderUtils的registerBeanDefinition方法。
+	 *
+	 * 4．最后发出响应事件，通知相关的监听器，这个bean已经加载完成了。
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
+			//自定义标签的解析:自定义属性
+			//<bean id="test" class="test.MyClass">
+			// <mybean:user username="aaa"/>
+			//</bean>
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				// Register the final decorated instance.
+				//注册解析的 BeanDefinition
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {
@@ -328,6 +451,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						bdHolder.getBeanName() + "'", ele, ex);
 			}
 			// Send registration event.
+			//通知监听器解析及注册完成
+			//这里的实现只为扩展，当程序开发人员需要对注册BeanDefinition事件进行监听
+			//时可以通过注册监听器的方式并将处理逻辑写入监听器中，目前在Spring中并没有对此事件做
+			//任何逻辑处理。
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}
 	}

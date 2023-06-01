@@ -49,11 +49,22 @@ public class SimpleAliasRegistry implements AliasRegistry {
 	private final Map<String, String> aliasMap = new ConcurrentHashMap<>(16);
 
 
+	/**
+	 * 1.alias 与 beanName 相同情况处理。若alias与beanName并名称相同则不需要处理并删
+	 * 除掉原有alias。
+	 * 2．alias覆盖处理。若aliasName已经使用并已经指向了另一beanName则需要用户的设置
+	 * 进行处理。
+	 * 3．alias循环检查。当A->B存在时，若再次出现A->C->B时候则会抛出异常。
+	 * 4．注册alias。
+	 * @param name the canonical name
+	 * @param alias the alias to be registered
+	 */
 	@Override
 	public void registerAlias(String name, String alias) {
 		Assert.hasText(name, "'name' must not be empty");
 		Assert.hasText(alias, "'alias' must not be empty");
 		synchronized (this.aliasMap) {
+			//如果beanName与alias相同的话不记录alias，并删除对应的alias
 			if (alias.equals(name)) {
 				this.aliasMap.remove(alias);
 				if (logger.isDebugEnabled()) {
@@ -67,6 +78,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 						// An existing alias - no need to re-register
 						return;
 					}
+					//如果alias不允许被覆盖则抛出异常
 					if (!allowAliasOverriding()) {
 						throw new IllegalStateException("Cannot define alias '" + alias + "' for name '" +
 								name + "': It is already registered for name '" + registeredName + "'.");
@@ -76,6 +88,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 								registeredName + "' with new target name '" + name + "'");
 					}
 				}
+				//当A->B存在时，若再次出现A->C->B 时候则会抛出异常
 				checkForAliasCircle(name, alias);
 				this.aliasMap.put(alias, name);
 				if (logger.isTraceEnabled()) {
