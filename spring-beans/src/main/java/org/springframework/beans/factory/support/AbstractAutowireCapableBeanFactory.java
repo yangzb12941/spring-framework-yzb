@@ -1418,6 +1418,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 		//如果工厂方法不为空则使用工厂方法初始化策略。
+		//1.如果在 RootBeanDefinition 中存在 factoryMethodName 属性，或者说在配置文件中配置了factory-method,
+		// 那么 Spring 会尝试使用instantiateUsingFactoryMethod(beanName, mbd,args)方法根据RootBeanDefinition
+		// 中的配置生成bean的实例。
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
@@ -1451,6 +1454,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		//确定用于给定bean的候选构造函数，检查所有注册的SmartInstantiationAwareBeanPostProcessors。
 		// 确定用于给定bean的候选构造函数，检查所有已注册的 智能实例化感知BeanPostProcessors。
 		// 需要根据参数解析构造函数
+
+		// 2.解析构造函数并进行构造函数的实例化。因为一个 bean 对应的类中可能会有多个构造函数，
+		// 而每个构造函数的参数不同，Spring 在根据参数及类型去判断最终会使用哪个构造函数进行实例化。
+		// 但是，判断的过程是个比较消耗性能的步骤，所以采用缓存机制，如果已经解析过则不需要重复解析而是直接从RootBeanDefinition
+		// 中的属性 resolvedConstructorOrFactoryMethod 缓存的值去取，否则需要再次解析，并将解析的结果添加至 RootBeanDefinition
+		// 中的属性 resolvedConstructorOrFactoryMethod
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
@@ -1614,6 +1623,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * “autowire构造函数”（按类型具有构造函数参数）行为。
 	 * 如果指定了显式构造函数参数值，并将所有剩余参数与bean工厂中的bean相匹配，也会应用此函数。
 	 * 这对应于构造函数注入：在这种模式下，Spring bean工厂能够托管期望基于构造函数的依赖项解析的组件。
+	 *
+	 * 对于实例的创建 Spring 中分成了两种情况，一种是通用的实例化，另一种是带有参数的实例化。
+	 * 带有参数的实例化过程相当复杂，因为存在着不确定性，所以在判断对应参数上做了大量工作.
 	 *
 	 * @param beanName the name of the bean
 	 * @param mbd the bean definition for the bean
