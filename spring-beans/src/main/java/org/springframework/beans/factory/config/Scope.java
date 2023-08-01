@@ -110,6 +110,20 @@ public interface Scope {
 	 * If a scoped object gets removed via this facade's {@link #remove(String)}
 	 * method, any registered destruction callback should be removed as well,
 	 * assuming that the removed object will be reused or manually destroyed.
+	 *
+	 * 注册一个回调，以便在销毁作用域中的指定对象时执行（或者在销毁整个作用域时执行，如果作用域不销毁单个对象，而是仅终止其整体）。
+	 * 注意：这是一个可选操作。此方法将仅针对具有实际销毁配置（DisposableBean、destroy方法、DestructionAwareBeanPostProcessor）
+	 * 的作用域bean调用。实现应该尽其所能在适当的时间执行给定的回调。如果底层运行时环境根本不支持这样的回调，
+	 * 则必须忽略该回调，并记录相应的警告。 请注意，“销毁”是指作为作用域自身生命周期的一部分自动销毁对象，
+	 * 而不是指应用程序已明确删除的单个作用域对象。如果通过这个facade的remove（String）方法移除了一个作用域对象，
+	 * 那么也应该移除任何注册的销毁回调，假设移除的对象将被重用或手动销毁。
+	 *
+	 * 参数：
+	 * name–要执行销毁回调的对象的名称
+	 * callback–要执行的销毁回调。
+	 * 请注意，传入的Runnable永远不会抛出异常，因此它可以在没有封闭的try-catch块的情况下安全地执行。
+	 * 此外，Runnable通常是可序列化的，前提是它的目标对象也是可序列化的。
+	 *
 	 * @param name the name of the object to execute the destruction callback for
 	 * @param callback the destruction callback to be executed.
 	 * Note that the passed-in Runnable will never throw an exception,

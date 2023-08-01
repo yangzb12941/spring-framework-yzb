@@ -538,44 +538,79 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.applicationListeners;
 	}
 
+	/**
+	 * refresh 中包含了几乎 ApplicationContext 供的全部功能，而且此函数中逻辑非常清
+	 * 明了，使我们很容易分析对应的层次及逻辑。
+	 * @throws BeansException
+	 * @throws IllegalStateException
+	 */
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
+			//准备刷新的上下文环境
+			//1.初始化前的准备工作，例如对系统属性或者环境变量进行准备及验证。在某种情况下项目的使用需要读取某些系统变量，
+			// 而这个变量的设置很可能会影响着系统的正确性，那么ClassPathXmlApplicationContext
+			// 为我们提供的这个准备函数就显得非常必要它可以在Spring 启动的时候提前对必需的变量进行存在性验证。
 			prepareRefresh();
 
-			// Tell the subclass to refresh the internal bean factory.
+			//  Tell the subclass to refresh the internal bean factory.
+			// 初始化 beanFactory，并进行 XML 文件读取
+			// 2.初始化 BeanFactory，并进行XML 文件读取。
+			// 之前有提到 ClassPathXmlApplicationContext 包含着 BeanFactory 所提供的一切特征，
+			// 那么在这一步骤中将会复用 BeanFactory 中的配置文件读取解析及其他功能，这一步之后,
+			// ClassPathXmlApplicationContext 实际上就已经包含了 BeanFactory 所提供的功能，
+			// 也就是可以进行 bean 的提取等基础操作了
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			// 对 BeanFactory 进行各种功能填充
+			// 3.对 BeanFactory 进行各种功能填充。
+			// @Qualifier 与@Autowired 应该是大家非常熟悉的注解,那么这两个注解正是在这一步骤中增加的支持。
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
+				// 子类覆盖方法做额外的处理
+				// 4.子类覆盖方法做额外的处理。
+				// Spring 之所以强大，为世人所推崇，除了它功能上为大家提供了便例外，还有一方面是它的完美架构，
+				// 开放式的架构让使用它的程序员很容易根据业务需要扩展已经存在的功能。这种开放式的设计在 Spring
+				// 中随处可见，例如在本例中就提供了一个空的函数实现 postProcessBeanFactory 来方便程序员在业务上做进一步扩展。
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				// 激活各种 BeanFactory 处理器
+				// 5.激活各种 BeanFactory 处理器
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// 注册拦截 Bean 创建的 Bean 处理器 这里只是注测，真正的调用是在 getBean 时候
+				// 6.注册拦截 bean 创建的 bean 处理器，这里只是注册，真正的调用是在 getBean 时候
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
+				// 7、为上下文初始化 Message 源， 即不同语言的消体， 国际化处理
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				// 8、初始化应用消息广播器，并放入"ApplicationEventMulticaster" bean中
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
+				// 9、留给子类来初始化其它的 Bean
 				onRefresh();
 
 				// Check for listener beans and register them.
+				// 在所有注册的Bean中，查找Listener bean，注册到消息广播中
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// 初始化剩下的单实例（非惰性的)
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
+				// 完成刷新过程，通知生命周期处理器 lifecycleProcessor 刷新过程，同时发出
+				// ContextRefreshEvent 通知别人
 				finishRefresh();
 			}
 
@@ -617,31 +652,55 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		if (logger.isDebugEnabled()) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Refreshing " + this);
-			}
-			else {
+			} else {
 				logger.debug("Refreshing " + getDisplayName());
 			}
 		}
 
+		//1、initPropertySources 正符合 Spring 的开放式结构设计，给用户最大扩展 Spring 的能力。
+		// 用户可以根据自身的需要重写 initPropertySources 方法，并在方法中进行个性化的属性处理及设置。
+
 		// Initialize any placeholder property sources in the context environment.
+		// 初始化上下文环境中的任何占位符属性源。
 		initPropertySources();
 
+		//2. validateRequiredProperties 则是对属性进行验证，那么如何验证呢?我们举个融合两句代码的小例子来帮助大家理解。
+		// 假如现在有这样一个需求，工程在运行过程中用到的某个设置(例如 VAR)是从系统环境变量中取得的，
+		// 而如果用户没有在系统环境变量中配置这个参数，那么工程可能不会工作。
+		// 这一要求可能会有各种各样的解决办法，当然，在 Spring 中可以这样做，你可以直接修改 Spring的源码，例如修改 ClassPathXmlApplicationContext。
+		// 当然，最好的办法还是对源码进行扩展，
+		//我们可以自定义类:
+		//public class MyclassPathXmlApplicationContext extends ClassPathXmlApplicationContext{
+		//
+		// public MyClassPathXmlApplicationContext(String... configLocations ){
+		//   super(configLocations);
+		// }
+		// protected void initPropertySources() {
+		//    //添加验证要求
+		//    getEnvironment().setRequiredProperties("VAR");
+		// }
+		//}
 		// Validate that all properties marked as required are resolvable:
 		// see ConfigurablePropertyResolver#setRequiredProperties
+		// 验证标记为必需的所有属性是否可解析：请参阅 ConfigurationPropertyResolver#setRequiredProperties
+		// 验证需要的属性文件是否已经放入环境中
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
+		// 存储预刷新ApplicationListeners。。。
 		if (this.earlyApplicationListeners == null) {
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		}
 		else {
 			// Reset local application listeners to pre-refresh state.
+			// 将本地应用程序侦听器重置为预刷新状态。
 			this.applicationListeners.clear();
 			this.applicationListeners.addAll(this.earlyApplicationListeners);
 		}
 
 		// Allow for the collection of early ApplicationEvents,
 		// to be published once the multicaster is available...
+		// 允许收集早期ApplicationEvents，以便在多主机可用后发布。。。
 		this.earlyApplicationEvents = new LinkedHashSet<>();
 	}
 
@@ -661,23 +720,61 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		//初始化 BeanFactorXML 到的 BeanFactory 录在当前实 的属性中
 		refreshBeanFactory();
+		//返回当前实体的beanFactory属性。
 		return getBeanFactory();
 	}
 
 	/**
 	 * Configure the factory's standard context characteristics,
 	 * such as the context's ClassLoader and post-processors.
+	 *
+	 * 下面函数中主要进行了几个方面的扩展。
+	 * 增加对 SpEL 语言的支持。
+	 *   Spring 表达式语言全称为 Spring Expression Language，缩写为SpEL，类似于 Struts 2x 中使用的 OGNL 表达式语言，
+	 *   能在运行时构建复杂表达式、存取对象图属性、对象方法调用等，并且能与 Spring 功能完美整合，
+	 *   比如能用来配置 bean 定义。SpEL 是单独模块，只依赖于 core模块，不依赖于其他模块，可以单独使用。
+	 *   SpEL 使用#{...}作为定界符，所有在大框号中的字符都将被认为是 SpEL，使用格式如下:
+	 * <bean id="saxophone" value="com.xxx.xxx.Xxx"/>
+	 * <bean>
+	 *     <property name="instrument" value="#{saxophone)"/><bean/>
+	 * </bean>
+	 * 相当于:
+	 * <bean id="saxophone" value="com.xxx.xxx.Xxx"/>
+	 * <bean>
+	 *   <property name="instrument" ref="saxophone"/>
+	 * <bean/>
+	 * 增加对属性编辑器的支持
+	 * 增加对一些内置类，比如 EnvironmentAware、MessageSourceAware 的信息注入。
+	 * 设置了依赖功能可忽略的接口。
+	 * 注册一些固定依赖的属性。
+	 * 增加 AspectJ 的支持(会在第 7章中进行详细的讲解)。
+	 * 将相关环境变量及属性注册以单例模式注册。
+	 *
 	 * @param beanFactory the BeanFactory to configure
 	 */
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
+		// 告诉内部bean工厂使用上下文的类加载器等。
+		// 设置 beanFactory 的 classLoader 为当前 context 的 classLoader
 		beanFactory.setBeanClassLoader(getClassLoader());
+		// 设置 beanFactory 的表达式语言处理器，Spring3 增加了表达式语言的支持
+		// 默认可以使用#{bean.xxx}的形式来调用相关属性值。
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+		// 为beanFactory 增加了一个默认的 propertyEditor，这个主要是对 bean 的属性等设置管理的一个工具
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// 使用上下文回调配置bean工厂。
+		// 添加 BeanPostProcessor
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+
+		// 设置了几个忽略自动装配的接口
+		// 当Spring 将 ApplicationContextAwareProcessor 注册后，那么在 invokeAwareInterfaces
+		// 方法中间接调用的 Aware 类已经不是普通的 bean 了，如 ResourceLoaderAware、
+		// ApplicationEventPublisherAware 等，那么当然需要在 Spring 做 bean 的依赖注入的时候忽略它们。
+		// 而 ignoreDependencyInterface的作用正是在此。
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
 		beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
@@ -687,22 +784,32 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
+		// BeanFactory 接口未在普通工厂中注册为可解析类型。MessageSource已注册（并为自动布线找到）为bean。
+		// 设置了几个自动装配的特殊规则
+		// 当注册了依赖解析后，例如当注册了对 BeanFactory.class 的解析依赖后，
+		// 当 bean 的属性注入的时候，一旦检测到属性为 BeanFactory 类型便会将 beanFactory
+		// 的实例注入进去。
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
 		beanFactory.registerResolvableDependency(ApplicationContext.class, this);
 
 		// Register early post-processor for detecting inner beans as ApplicationListeners.
+		// 注册早期的后处理器以将内部bean检测为ApplicationListeners。
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
+		// 检测LoadTimeWeaver并准备编织（如果发现）。
+		// 增加对AspectJ 的支持
 		if (beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			// Set a temporary ClassLoader for type matching.
+			// 为类型匹配设置临时ClassLoader。
 			beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
 		}
 
 		// Register default environment beans.
+		// 添加默认的系统环境 bean
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
@@ -734,6 +841,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
 		// (e.g. through an @Bean method registered by ConfigurationClassPostProcessor)
+		// 检测 LoadTimeWeaver 并准备编织，如果同时发现（例如通过ConfigurationClassPostProcessor注册的@Bean方法）
 		if (beanFactory.getTempClassLoader() == null && beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));

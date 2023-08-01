@@ -98,6 +98,19 @@ public abstract class AbstractGenericContextLoader extends AbstractContextLoader
 	 * context and registers a JVM shutdown hook for it.</li>
 	 * </ul>
 	 *
+	 * 从提供的 MergedContextConfiguration 加载 Spring ApplicationContext。
+	 * 实施细节： 调用 validateMergeContext configuration（MergeContext配置）以允许子类在继续之前验证提供的配置。
+	 * 创建 GenericApplicationContext 实例。 如果提供的 MergedContextConfiguration 引用父配置，则将检索相应的
+	 * ApplicationContext并将其设置为此方法创建的上下文的父配置。 调用 prepareContext（GenericApplicationContext）
+	 * 以获得与ContextLoader SPI的向后兼容性。 调用prepareContext（ ConfigurationApplicationContext，
+	 * MergedContextConfiguration）以允许在加载bean定义之前自定义上下文。 调用 customizeBeanFactory（ DefaultListableBeanFactory ）
+	 * 以允许自定义上下文的DefaultListableBeanFactory。
+	 * 委托加载 BeanDefinitions（GenericApplicationContext、MergedContextConfiguration），
+	 * 以从提供的MergedContextConfiguration中的位置或类填充上下文。 委派到AnnotationConfigUtils用于注册注释配置处理器。
+	 * 调用customizeContext（GenericApplicationContext）以允许在刷新上下文之前对其进行自定义。
+	 * 调用customizeContext（ConfigurationApplicationContext，MergedContextConfiguration）
+	 * 以允许在刷新上下文之前对其进行自定义。 刷新上下文并为其注册JVM关闭挂钩。
+	 *
 	 * @return a new application context
 	 * @see org.springframework.test.context.SmartContextLoader#loadContext(MergedContextConfiguration)
 	 * @see GenericApplicationContext

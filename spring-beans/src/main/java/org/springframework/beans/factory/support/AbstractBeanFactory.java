@@ -1295,6 +1295,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * 使用此工厂注册的自定义编辑器初始化给定的BeanWrapper。为将创建和填充bean实例的BeanWrapper调用。
 	 * 默认实现委托给registerCustomEditors。可以在子类中重写。
 	 *
+	 * 其中我们看到一个方法是我们熟悉的，就是 AbstractBeanFactory 类中的 initBeanWrapper方法，
+	 * 这是在 bean 初始化时使用的一个方法，主要是在将 BeanDefinition 转换为 BeanWrapper 后用于对属性的填充。
+	 * 到此，逻辑已经明了，在 bean的初始化后会调用 ResourceEditorRegistrar 的 registerCustomEditors
+	 * 方法进行批量的通用属性编辑器注册。注册后，在属性填充的环节便可以直接让 Spring 使用这些编辑器进行属性的解析了。
+	 *
 	 * @param bw the BeanWrapper to initialize
 	 */
 	protected void initBeanWrapper(BeanWrapper bw) {
@@ -1634,6 +1639,101 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	/**
 	 * Evaluate the given String as contained in a bean definition,
 	 * potentially resolving it as an expression.
+	 *
+	 * 当调用这个方法时会判断是否存在语言解析器，如果存在则调用语言解析器的方法进行解析，
+	 * 解析的过程是在 Spring 的 expression 的包内，这里不做过多解释。
+	 * 我们通过查看对 evaluateBeanDefinitionString方法的调用层次可以看出，
+	 * 应用语言解析器的调用主要是在解析依赖注入bean 的时候，以及在完成 bean 的初始化和属性获取后进行属性填充的时候。
+	 *
+	 * 增加属性注册编辑器:
+	 * 在 Spring DI 注入的时候可以把普通属性注入进来,但是像 Date 类型就无法被识别。
+	 * 例如:
+	 * public class UserManager {
+	 *   private Date dataValue;
+	 *   public Date getDataValue() {
+	 *      return dataValue;
+	 *   }
+	 *   public void setDataValue(Date dataValue) {
+	 *     this.dataValue = dataValue;
+	 *   }
+	 *   public String toString(){
+	 *     return "dataValue: " + dataValue;
+	 *   }
+	 * 上面代码中，需要对日期型属性进行注入:
+	 * <bean id="userManager" class="com.test.UserManager">
+	 *     <property name="dataValue">
+	 *         <value>2013-03-15</value>
+	 *     </property>
+	 * </bean>
+	 * 测试代码：
+	 * @Test
+	 * public void testDate(){
+	 *    ApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
+	 *    UserManager userManager = (UserManager)ctx.getBean("userManager");
+	 *    System.out.printIn(userManager);
+	 * }
+	 *
+	 * 如果直接这样使用，程序则会报异常，类型转换不成功。因为在 UserManager 中的 dataValue属性是 Date 类型的，
+	 * 而在 XML 中配置的却是 String 类型的，所以当然会报异常。Spring 针对此问题提供了两种解决办法。
+	 *
+	 * Spring 针对此问题提供了两种解决办法。
+	 * 1.使用自定义属性编辑器
+	 * 使用自定义属性编辑器，通过继承 PropertyEditorSupport，重写 setAsText 方法，具体步骤如下。
+	 * 1.编写自定义的属性编辑器
+	 * public class DatePropertyEditor extends PropertyEditorSupport {
+	 *    private String format = "yyyy-MM-dd";
+	 *    public void setFormat(String format) {
+	 *       this.format = format;
+	 *    }
+	 *    public void setAsText(String arg0) throws IllegalArgumentException {
+	 *       System.out.println("arg0:  + arg0);
+	 *       SimpleDateFormat sdf = new SimpleDateFormat(format);
+	 *       try {
+	 *            Date d = sdf.parse(arg0);
+	 *            this.setValue(d);
+	 *         }catch (ParseException e)
+	 *         {
+	 *             e.printStackTrace();
+	 *         }
+	 *    }
+	 * }
+	 *
+	 * 2.将自定义属性编辑器注册到 Spring 中。
+	 * <!-- 自定义属性编辑器 -->
+	 * <bean class="org.Springframework.beans.factory.config.CustomEditorConfigurer">
+	 *    <property name="customEditors">
+	 *      <map>
+	 *         <entry key="java.util.Date">
+	 *         <bean class="com.test.DatePropertyEditor">
+	 *            <property name="format" value="yyyy-MM-dd"/>
+	 *         </bean>
+	 *     </map>
+	 *    </property>
+	 * </bean>
+	 *
+	 * 在配置文件中引入类型为 org.Springframework.beans.factory.config.CustomEditorConfigurer的 bean，
+	 * 并在属性 customEditors 中加入自定义的属性编辑器，其中 key 为属性编辑器所对应的类型。通过这样的配置，当 Spring
+	 * 在注入 bean 的属性时一旦遇到了 java.util.Date 类型的属性会自动调用自定义的
+	 * DatePropertyEditor 解析器进行解析，并用解析结果代替配置属性进行注入。
+	 *
+	 * 2.注册 Spring 自带的属性编辑器 CustomDateEditor
+	 * 通过注册 Spring 自带的属性编辑器 CustomDateEditor，具体步骤如下
+	 * 1. 定义属性编辑器。
+	 * public class DatePropertyEditorRegistrar implements PropertyEditorRegistrar{
+	 *    public void registerCustomEditors(PropertyEditorRegistry registry) {
+	 *          registry.registerCustomEditor(Date.class, new CustomDateEditor (new SimpleDateFormat("yyyy-MM-dd"),true)) ;
+	 *    }
+	 * }
+	 * 2.注册到 Spring 中
+	 * <!-- 注册 Spring 自带编辑器 -->
+	 * <bean class="org.Springframework.beans,factory.config.CustomEditorConfigurer">
+	 *     <property name="propertyEditorRegistrars">
+	 *         <list>
+	 *             <bean class="com.test.DatePropertyEditorRegistrar"></bean>
+	 *         </list>
+	 *    </property>
+	 * </bean>
+	 *
 	 * @param value the value to check
 	 * @param beanDefinition the bean definition that the value comes from
 	 * @return the resolved value
@@ -1964,6 +2064,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * Add the given bean to the list of disposable beans in this factory,
 	 * registering its DisposableBean interface and/or the given destroy method
 	 * to be called on factory shutdown (if applicable). Only applies to singletons.
+	 *
+	 * Spring 中不但提供了对于初始化方法的扩展入口，同样也提供了销毁方法的扩展入口，
+	 * 对于销毁方法的扩展，除了我们熟知的配置属性 destroy-method 方法外，
+	 * 用户还可以注册后处理器 DestructionAwareBeanPostProcessor 来统一处理 bean 的销毁方法，代码如下:
+	 *
 	 * @param beanName the name of the bean
 	 * @param bean the bean instance
 	 * @param mbd the bean definition for the bean
@@ -1979,11 +2084,16 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Register a DisposableBean implementation that performs all destruction
 				// work for the given bean: DestructionAwareBeanPostProcessors,
 				// DisposableBean interface, custom destroy method.
+				/**
+				 * 单例模式下注册需要销毁的 bean，此方法中会处理实现 DisposableBean 的 bean，
+				 * 并且对所有的 bean 使用 DestructionAwareBeanPostProcessors 处理 DisposableBean DestructionAwareBeanPostProcessors,
+				 */
 				registerDisposableBean(beanName,
 						new DisposableBeanAdapter(bean, beanName, mbd, getBeanPostProcessors(), acc));
 			}
 			else {
 				// A bean with a custom scope...
+				//自定义scope的处理
 				Scope scope = this.scopes.get(mbd.getScope());
 				if (scope == null) {
 					throw new IllegalStateException("No Scope registered for scope name '" + mbd.getScope() + "'");

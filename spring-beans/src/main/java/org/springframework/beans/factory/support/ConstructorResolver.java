@@ -137,10 +137,27 @@ class ConstructorResolver {
 		Object[] argsToUse = null;
 		//explicitArgs 通过getBean方法传入
 		//如果getBean方法调用的时候指定方法参数那么直接使用
+		/**
+		 *  1、构造函数参数的确定
+		 *  a、根据explicitArgs 参数判断。
+		 * 	  如果传入的参数 explicitArgs 不为空，那便可以直接确定参数，因为explicitArgs 参数是在调用 Bean的时候用户指定的，
+		 * 	  在 BeanFactory 类中存在这样的方法:Object getBean(String name， Object... args) throws BeansException;
+		 * 	  在获取 bean 的时候,用户不但可以指定 bean 的名称还可以指定 bean 所对应类的构造函数或者工厂方法的方法参数，
+		 * 	  主要用于静态工厂方法的调用，而这里是需要给定完全匹配的参数的，所以，便可以判断，如果传入参数 explicitArgs 不为空，
+		 * 	  则可以确定构造函数参数就是它。
+		 *
+		 */
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
+			/**
+			 * b、缓存中获取。
+			 *   除此之外，确定参数的办法如果之前已经分析过，也就是说构造函数参数已经记录在缓存中，那么便可以直接拿来使用。
+			 *   而且，这里要提到的是，在缓存中缓存的可能是参数的最终类型也可能是参数的初始类型，
+			 *   例如:构造函数参数要求的是 int 类型，但是原始的参数值可能是String类型的“1”，那么即使在缓存中得到了参数，
+			 *   也需要经过类型转换器的过滤以确保参数类型与对应的构造函数参数类型完全对应。
+			 */
 			//如果在getBean方法时候没有指定则尝试从配置文件中解析
 			Object[] argsToResolve = null;
 			//尝试从缓存中获取
@@ -164,6 +181,32 @@ class ConstructorResolver {
 			}
 		}
 		//没有缓存
+		/**
+		 * c、配置文件获取。
+		 * 如果不能根据传入的参数 explicitArgs 确定构造函数的参数也无法在缓存中得到相关信息那么只能开始新一轮的分析了。
+		 * 分析从获取配置文件中配置的构造函数信息开始，经过之前的分析我们知道，Spring 中配置文件中的信息经过转换都会通过
+		 * BeanDefinition实例承载，也就是参数mbd 中包含，那么可以通过调用 mbd.getConstructorArgumentValues()来获取配置的构造函数信息。
+		 * 有了配置中的信息便可以获取对应的参数值信息了，获取参数值的信息包括直接指定值，如: 直接指定构造函数中某个值为原始类型 String 类型，
+		 * 或者是一个对其他 bean 的引用，而这一处理委托给resolveConstructorArguments 方法，并返回能解析到的参数的个数。
+		 *
+		 * 2.构造函数的确定。
+		 * 经过了第一步后已经确定了构造函数的参数，接下来的任务就是根据构造函数参数在所有构造函数中锁定对应的构造函数，
+		 * 而匹配的方法就是根据参数个数匹配，所以在匹配之前需要先对构造函数按照 public 构造函数优先参数数量降序、
+		 * 非 public 构造函数参数数量降序。这样可以在遍历的情况下迅速判断排在后面的构造函数参数个数是否符合条件。
+		 *
+		 * 由于在配置文件中并不是唯一限制使用参数位置索引的方式去创建，同样还支持指定参数名称进行设定参数值的情况，
+		 * 如<constructor-arg name="aa">，那么这种情况就需要首先确定构造函数中的参数名称。
+		 *
+		 * 获取参数名称可以有两种方式，一种是通过注解的方式直接获取，另一种就是使用 Spring中提供的工具类 ParameterNameDiscoverer 来获取。
+		 * 构造函数、参数名称、参数类型、参数值都确定后就可以锁定构造函数以及转换对应的参数类型了。
+		 *
+		 * 3，根据确定的构造函数转换对应的参数类型。主要是使用 Spring 中提供的类型转换器或者用户提供的自定义类型转换器进行转换。
+		 *
+		 * 4，构造函数不确定性的验证。
+		 * 当然，有时候即使构造函数、参数名称、参数类型、参数值都确定后也不一定会直接锁定构造函数，不同构造函数的参数为父子关系，所以 Spring 在最后又做了一次验证。
+		 *
+		 * 5.根据实例化策略以及得到的构造函数及构造函数参数实例化 Bean。
+		 */
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
 			Constructor<?>[] candidates = chosenCtors;

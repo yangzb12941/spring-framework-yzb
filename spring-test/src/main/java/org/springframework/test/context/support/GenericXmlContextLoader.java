@@ -43,6 +43,7 @@ public class GenericXmlContextLoader extends AbstractGenericContextLoader {
 	 */
 	@Override
 	protected BeanDefinitionReader createBeanDefinitionReader(GenericApplicationContext context) {
+		// 为指定 beanFactory 创建 XmlBeanDefinitionReader
 		return new XmlBeanDefinitionReader(context);
 	}
 

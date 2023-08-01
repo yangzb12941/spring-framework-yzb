@@ -342,6 +342,11 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 
 	/**
 	 * Determine whether the given dependency declares a value annotation.
+	 * 在讲解根据类型自定注入的时候，我们说过解析 autowire 类型时首先会调用方法
+	 * Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
+	 * 因此我们知道，在 QualifierAnnotationAutowireCandidateResolver 中一定会提供了解析
+	 * Qualifier 与 Autowire 注解的方法。
+	 *
 	 * @see Value
 	 */
 	@Override
