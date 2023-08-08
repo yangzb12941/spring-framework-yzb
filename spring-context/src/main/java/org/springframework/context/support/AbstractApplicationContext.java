@@ -378,6 +378,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * standard framework event)
 	 * 将给定事件发布给所有侦听器<p> 注意：侦听器在MessageSource之后进行初始化，
 	 * 以便能够在侦听器实现中访问它。因此，MessageSource实现无法发布事件
+	 *
+	 * 当完成 ApplicationContext 初始化的时候,要通过 Spring 中的事件发布机制来发出 ContextRefreshedEvent
+	 * 事件，以保证对应的监听器可以做进一步的逻辑处理。
+	 *
 	 * @param event 要发布的事件（可以是特定于应用程序的事件或标准框架事件）
 	 */
 	@Override
@@ -606,6 +610,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Instantiate all remaining (non-lazy-init) singletons.
 				// 初始化剩下的单实例（非惰性的)
+				// 非延迟加载bean 的初始化工作。
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -629,7 +634,6 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// Propagate exception to caller.
 				throw ex;
 			}
-
 			finally {
 				// Reset common introspection caches in Spring's core, since we
 				// might not ever need metadata for singleton beans anymore...
@@ -860,10 +864,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Initialize the MessageSource.
 	 * Use parent's if none defined in this context.
+	 * 在 initMessageSource 中的方法主要功能是提取配置中定义的 messageSource，并将其记录在 Spring 的容器中，
+	 * 也就是 AbstractApplicationContext 中。当然，如果用户未设置资源文件的
+	 * 话，Spring 中也提供了默认的配置 DelegatingMessageSource。在 initMessageSource 中获取自定义资源文件的方式为
+	 * beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME,MessageSource.class),在这里 Spring 使用了硬编码的方式硬
+	 * 性规定了子定义资源文件必须为 message，否则便会获取不到自定义资源配置，这也是为什么之前提到Bean 的id 如果不为 message 会抛出异常。
 	 */
 	protected void initMessageSource() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 		if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {
+			//如果在配置中已经配置了messageSource，那么将messageSource提取并记录在 this.messageSource
 			this.messageSource = beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME, MessageSource.class);
 			// Make MessageSource aware of parent MessageSource.
 			if (this.parent != null && this.messageSource instanceof HierarchicalMessageSource) {
@@ -880,6 +890,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 		else {
 			// Use empty MessageSource to be able to accept getMessage calls.
+			//如果用户并没有定义配置文件，那么使用 临时的 DelegatingMessageSource 以便于作为调
+			//getMessage 方法的返回
 			DelegatingMessageSource dms = new DelegatingMessageSource();
 			dms.setParentMessageSource(getInternalParentMessageSource());
 			this.messageSource = dms;
@@ -893,6 +905,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Initialize the ApplicationEventMulticaster.
 	 * Uses SimpleApplicationEventMulticaster if none defined in the context.
+	 *
+	 * 如果用户自定义了事件广播器，那么使用用户自定义的事件广播器
+	 * 如果用户没有自定义事件广播器，那么使用默认的 ApplicationEventMulticaster。
+	 *
 	 * @see org.springframework.context.event.SimpleApplicationEventMulticaster
 	 */
 	protected void initApplicationEventMulticaster() {
@@ -917,6 +933,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Initialize the LifecycleProcessor.
 	 * Uses DefaultLifecycleProcessor if none defined in the context.
+	 *
+	 * 当ApplicationContext 启动或停止时，它会通过 LifecycleProcessor 来与所有声明的
+	 * bean 的周期做状态更新，而在 LifecycleProcessor 的使用前首先需要初始化。
+	 *
 	 * @see org.springframework.context.support.DefaultLifecycleProcessor
 	 */
 	protected void initLifecycleProcessor() {
@@ -957,12 +977,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		// 硬编码方式注册的监听器处理
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		// 配置文件注册的监听器处理
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
@@ -981,6 +1003,35 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Finish the initialization of this context's bean factory,
 	 * initializing all remaining singleton beans.
+	 * ConversionService的使用方式：使用自定义类型转换器从 String 转换为 Date 的方式。
+	 * 1.定义转换器。
+	 * public class String2DateConverter implements Converter<String，Date>{
+	 *    @Override
+	 *    public Date convert(String arg0) {
+	 *       try{
+	 *            return DateUtils.parseDate(arg0,new String[] {"yyyy-MM-dd HH:mm:ss" });
+	 *       } catch (ParseException e) {
+	 *         return null
+	 *       };
+	 *    }
+	 * }
+	 * 2、注册：
+	 * <bean id="conversionService" class="org.Springframework.context.support.ConversionServiceFactoryBean">
+	 *     <property name="converters">
+	 *       <list>
+	 *           <bean class="String2DateConverter" />
+	 *       </list>
+	 *     </property>
+	 * </bean>
+	 * 3.测试。
+	 * 这样便可以使用 Converter 为我们提供的功能了，下面我们通过一个简便的方法来对此直接测试。
+	 * public void testStringToPhoneNumberConvert() {
+	 *     DefaultConversionService conversionService = new DefaultConversionService();
+	 *     conversionService.addConverter(new StringToPhoneNumberConverter());
+	 *     String phoneNumberStr ="010-12345678";
+	 *     PhoneNumberModel phoneNumber = conversionService.convert (phoneNumberStrPhoneNumber Model.class);
+	 *     Assert.assertEquals("010"，phoneNumber.getAreaCode());
+	 * }
 	 */
 	protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
 		// Initialize conversion service for this context.
@@ -1007,15 +1058,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.setTempClassLoader(null);
 
 		// Allow for caching all bean definition metadata, not expecting further changes.
+		// 冻结所有的bean定义，说明注册的bean定义将不被修改或任何进一步的处理
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
+		// 初始化剩下的单实例(非惰性)
 		beanFactory.preInstantiateSingletons();
 	}
 
 	/**
 	 * Finish the refresh of this context, invoking the LifecycleProcessor's
 	 * onRefresh() method and publishing the
+	 *
 	 * {@link org.springframework.context.event.ContextRefreshedEvent}.
 	 */
 	protected void finishRefresh() {
@@ -1023,6 +1077,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		clearResourceCaches();
 
 		// Initialize lifecycle processor for this context.
+		// 在 Spring 中还提供了 Lifecycle 接口，Lifecycle 中包含 start/stop 方法，实现此接口后 Spring
+		// 会保证在启动的时候调用其 start 方法开始生命周期，并在 Spring 关闭的时候调用 stop 方法来结束生命周期，
+		// 通常用来配置后台程序，在启动后一直运行(如对 MQ 进行轮询等 )。
+		// 而ApplicationContext的初始化最后正是保证了这一功能的实现。
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.

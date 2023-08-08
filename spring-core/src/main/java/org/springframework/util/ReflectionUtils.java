@@ -48,6 +48,9 @@ public abstract class ReflectionUtils {
 	/**
 	 * Pre-built MethodFilter that matches all non-bridge non-synthetic methods
 	 * which are not declared on {@code java.lang.Object}.
+	 *
+	 * 预先构建的MethodFilter，它匹配所有未在java.lang.Object上声明的非桥接非合成方法。
+	 *
 	 * @since 3.0.5
 	 */
 	public static final MethodFilter USER_DECLARED_METHODS =
@@ -55,6 +58,7 @@ public abstract class ReflectionUtils {
 
 	/**
 	 * Pre-built FieldFilter that matches all non-static, non-final fields.
+	 * 预构建的FieldFilter，匹配所有非静态、非最终字段。
 	 */
 	public static final FieldFilter COPYABLE_FIELDS =
 			(field -> !(Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())));

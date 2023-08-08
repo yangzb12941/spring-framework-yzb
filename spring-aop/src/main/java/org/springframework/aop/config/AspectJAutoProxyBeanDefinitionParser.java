@@ -40,8 +40,13 @@ class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 
 	@Override
 	@Nullable
+	/**
+	 * 所有解析器，因为是对 BeanDefinitionParser 接口的统一实现，入口都是从 parse 函数开始的，AspectJAutoProxyBeanDefinitionParser 的 parse 函数如下
+	 */
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		//注册 AnnotationAwareAspectJAutoProxyCreator
 		AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
+		//对于注解中子类的处理
 		extendBeanDefinition(element, parserContext);
 		return null;
 	}

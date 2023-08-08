@@ -53,6 +53,21 @@ package org.springframework.context;
  * of the application context in any case. As a consequence, the bean definition
  * lazy-init flag has very limited actual effect on {@code SmartLifecycle} beans.
  *
+ * Lifecycle接口的扩展，用于那些需要在ApplicationContext刷新 and/or 按特定顺序关闭时启动的对象。
+ * isAutoStartup（）返回值指示是否应在上下文刷新时启动此对象。回调接受stop(Runnable)方法对于具有
+ * 异步关闭进程的对象非常有用。此接口的任何实现都必须在关闭完成时调用回调的run（）方法，以避免在整个
+ * ApplicationContext关闭过程中出现不必要的延迟。 此接口扩展了Phased，getPhase（）方法的返回值
+ * 指示应在其中started and stopped此Lifecycle组件的阶段。启动过程从最低相位值开始，到最高相位值
+ * 结束（Integer.MIN_value是尽可能低的，Integer.MAX_value则是尽可能高的）。停机过程将采用相反的顺序。
+ * 任何具有相同值的组件都将在同一阶段内任意排序。 示例：如果组件B依赖于组件A已经启动，那么组件A的相位值应该低于组件B。
+ * 在停机过程中，组件B将在组件A之前停止。 任何显式的“依赖”关系都将优先于阶段顺序，这样依赖bean总是在其依赖项之后开始，
+ * 而总是在依赖项之前停止。 上下文中未同时实现SmartLifecycle的任何Lifecycle组件都将被视为阶段值为0。
+ *
+ * 这样，如果SmartLifecycle的阶段值为负，则它可以在这些Lifecycle组件之前启动，如果阶段值为正，则它可能在这些组件之后启动。
+ *
+ * 请注意，由于SmartLifecycle中支持自动启动，在任何情况下，SmartLifecycle bean实例通常都会在应用程序上下文启动时初始化。
+ * 因此，bean定义惰性init标志对SmartLifecycle bean的实际影响非常有限。
+ *
  * @author Mark Fisher
  * @author Juergen Hoeller
  * @since 3.0

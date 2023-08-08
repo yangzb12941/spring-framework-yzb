@@ -59,7 +59,7 @@ import org.springframework.core.AliasRegistry;
 // 这就引出了BeanDefinitionRegistry了。
 // Spring通过BeanDefinitionReader将配置元信息加载到内存生成相应的BeanDefinition之后，
 // 就将其注册到BeanDefinitionRegistry中，BeanDefinitionRegistry就是一个存放BeanDefinition的大篮子，
-// 它也是一种键值对的形式，通过特定的Bean定义的id，映射到相应的BeanDefination。
+// 它也是一种键值对的形式，通过特定的Bean定义的id，映射到相应的BeanDefinition。
 public interface BeanDefinitionRegistry extends AliasRegistry {
 
 	/**
