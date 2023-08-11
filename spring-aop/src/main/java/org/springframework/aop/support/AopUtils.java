@@ -230,6 +230,7 @@ public abstract class AopUtils {
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
+			//如果我们无论如何都匹配任何方法，则无需迭代这些方法。。
 			return true;
 		}
 
@@ -297,6 +298,9 @@ public abstract class AopUtils {
 	/**
 	 * Determine the sublist of the {@code candidateAdvisors} list
 	 * that is applicable to the given class.
+	 *
+	 * 对于所有增强器来讲，并不一定都适用于当前的 Bean,还要挑取出适合的增强器，也就是满足我们配置的通配符的增强器。
+	 *
 	 * @param candidateAdvisors the Advisors to evaluate
 	 * @param clazz the target class
 	 * @return sublist of Advisors that can apply to an object of the given class
@@ -307,17 +311,22 @@ public abstract class AopUtils {
 			return candidateAdvisors;
 		}
 		List<Advisor> eligibleAdvisors = new ArrayList<>();
+		//首先处理引介增强
 		for (Advisor candidate : candidateAdvisors) {
+			//findAdvisorsThatCanApply 函数的主要功能是寻找所有增强器中适用于当前 class 的增强
+			//器。 引介增强与普通的增强处理是不一样的 ， 所以分开处理。 而对于真正的匹配在 canApply 中实现。
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
 		for (Advisor candidate : candidateAdvisors) {
+			//引介增强已经处理
 			if (candidate instanceof IntroductionAdvisor) {
 				// already processed
 				continue;
 			}
+			//对于普通 bean 的处理
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

@@ -74,6 +74,17 @@ public class InstrumentationLoadTimeWeaver implements LoadTimeWeaver {
 
 	/**
 	 * Create a new InstrumentationLoadTimeWeaver for the given ClassLoader.
+	 * 在实例化的过程中会对当前的 this.instrumentation 属性进行初始化，而初始化的代码如下：
+	 * this.instrumentation = getInstrumentation()，也就是说在 InstrumentationLoadTimeWeaver
+	 * 实例化后其属性 Instrumentation 已经被初始化为代表着当前虚拟机的实例了。
+	 * 综合我们讲过的例子，对于注册转换器，如 addTransformer 函数等，便可以直接使用此属性进行操作了。
+	 * 也就是经过以上程序的处理后，在 Spring 中的 bean 之间的关系如下。
+	 * 1、AspectJWeavingEnabler 类型的 bean 中的 loadTimeWeaver 属性被初始化为 DefaultContextLoadTimeWeaver
+	 * 类型的 bean。
+	 *
+	 * 2、DefaultContextLoadTimeWeaver 类型的 bean 中的 loadTimeWeaver 属性被初始化为
+	 * InstrumentationLoadTimeWeaver。
+	 *
 	 * @param classLoader the ClassLoader that registered transformers are supposed to apply to
 	 */
 	public InstrumentationLoadTimeWeaver(@Nullable ClassLoader classLoader) {

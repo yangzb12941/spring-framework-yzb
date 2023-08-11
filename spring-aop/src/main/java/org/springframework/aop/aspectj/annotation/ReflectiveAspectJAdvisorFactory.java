@@ -180,6 +180,10 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 	/**
 	 * Build a {@link org.springframework.aop.aspectj.DeclareParentsAdvisor}
 	 * for the given introduction field.
+	 *
+	 * DeclareParents 主要用于引介增强的注解形式的实现，而其实现方式与普通增强很类似，只
+	 * 不过使用 DeclareParentsAdvisor 对功能进行封装。
+	 *
 	 * <p>Resulting Advisors will need to be evaluated for targets.
 	 * @param introductionField the field to introspect
 	 * @return the Advisor instance, or {@code null} if not an Advisor
@@ -271,6 +275,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 
 		AbstractAspectJAdvice springAdvice;
 
+		//根据不同的注解类型封装不同的增强器
 		switch (aspectJAnnotation.getAnnotationType()) {
 			case AtPointcut:
 				if (logger.isDebugEnabled()) {
@@ -326,14 +331,16 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 	/**
 	 * Synthetic advisor that instantiates the aspect.
 	 * Triggered by per-clause pointcut on non-singleton aspect.
-	 * The advice has no effect.
+	 * The advice has no effect.实例化方面的合成顾问。由非单例方面的每个子句切入点触发。这个建议没有效果。
+	 *
+	 * 如果寻找的增强器不为空而且又配置了增强延迟初始化，那么就需要在首位加入同步实例
+	 * 化增强器。
 	 */
 	@SuppressWarnings("serial")
 	protected static class SyntheticInstantiationAdvisor extends DefaultPointcutAdvisor {
 
 		public SyntheticInstantiationAdvisor(final MetadataAwareAspectInstanceFactory aif) {
-			super(aif.getAspectMetadata().getPerClausePointcut(), (MethodBeforeAdvice)
-					(method, args, target) -> aif.getAspectInstance());
+			super(aif.getAspectMetadata().getPerClausePointcut(),/*目标方法前调用，类似＠Before*/ (MethodBeforeAdvice)(method, args, target) -> /*简单初始化 aspect*/aif.getAspectInstance());
 		}
 	}
 

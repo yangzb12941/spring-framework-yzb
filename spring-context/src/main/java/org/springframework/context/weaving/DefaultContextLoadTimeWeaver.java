@@ -83,7 +83,10 @@ public class DefaultContextLoadTimeWeaver implements LoadTimeWeaver, BeanClassLo
 			this.loadTimeWeaver = serverSpecificLoadTimeWeaver;
 		}
 		else if (InstrumentationLoadTimeWeaver.isInstrumentationAvailable()) {
+			//检查当前虚拟机中的 Instrumentation 实例是否可用
 			logger.debug("Found Spring's JVM agent for instrumentation");
+			//这句代码不仅仅是实例化了一个 InstrumentationLoadTimeWeaver 类型的实例，而且在实例
+			//化过程中还做了一些额外的操作。
 			this.loadTimeWeaver = new InstrumentationLoadTimeWeaver(classLoader);
 		}
 		else {

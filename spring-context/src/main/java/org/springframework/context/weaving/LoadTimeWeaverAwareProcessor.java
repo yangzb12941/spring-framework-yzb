@@ -89,9 +89,29 @@ public class LoadTimeWeaverAwareProcessor implements BeanPostProcessor, BeanFact
 		this.beanFactory = beanFactory;
 	}
 
-
+	/**
+	 * 当在 Spring 中调用 AspectJWeavingEnabler 时， this.loadTimeWeaver 尚未被初始化，那么会
+	 * 直接调用 beanFactory.getBean 方法获取对应的 DefaultContextLoadTimeWeaver 类型的 bean ，
+	 * 并将其设 置为 AspectJWeavingEnabler 类型 bean 的 loadTimeWeaver 属性中。
+	 * 当然 AspectJWeavingEnabler 同样实现了 BeanClassLoaderAware 以及 Ordered 接口，
+	 * 实现 BeanClassLoaderAware 接口保证了在 bean 初始化的时候调用 AbstractAutowireCapableBeanFactory
+	 * 的 invokeAwareMethods 的时候将 beanClassLoader 赋值给当前类。
+	 * 而实现 Ordered 接口则保证在实例化 bean 时当前 bean 会被最先初 始化。
+	 *
+	 * DefaultContextLoadTimeWeaver 类又同时实现了 LoadTimeWeaver 、 BeanClassLoaderAware
+	 * 以及 DisposableBean。 其中 DisposableBean 接口保证在 bean 销毁时会调用 destroy 方法进行
+	 * bean 的清理，而 BeanClassLoaderAware 接口则保证在 bean 的初始化调用 AbstractAutowireCapableBeanFactory
+	 * 的 invokeAwareMethods 时调用 setBeanClassLoader 方法。
+	 *
+	 * @param bean the new bean instance
+	 * @param beanName the name of the bean
+	 * @return
+	 * @throws BeansException
+	 */
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		// 最开始的 if 判断注定这个后处理器只对 LoadTimeWeaverAware 类型的 bean 起作用，而纵观所有的 bean,
+		// 实现 LoadTimeWeaverAware 接口的类只有 AspectJWeavingEnabler。
 		if (bean instanceof LoadTimeWeaverAware) {
 			LoadTimeWeaver ltw = this.loadTimeWeaver;
 			if (ltw == null) {
