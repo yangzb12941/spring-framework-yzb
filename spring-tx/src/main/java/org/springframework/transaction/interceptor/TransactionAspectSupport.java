@@ -315,6 +315,37 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	 * General delegate for around-advice-based subclasses, delegating to several other template
 	 * methods on this class. Able to handle {@link CallbackPreferringPlatformTransactionManager}
 	 * as well as regular {@link PlatformTransactionManager} implementations.
+	 *
+	 * 从上面的函数中，我们尝试整理下事务处理的脉络，在 Spring 中支持两种事务处理的方式，分别是声明式事务处理与编程式事务处理，
+	 * 两者相对于开发人员来讲差别很大，但是对于 Spring 中的实现来讲，大同小异。 在 invoke 中我们也可以看到这两种方式的实现。
+	 * 考虑到对事务的应用，声明式的事务处理使用起来方便，也相对流行些，我们就以此种方式进行分析。
+	 * 对于声明式的事务处理主要有以下几个步骤。
+	 * 1.获取事务的属性。
+	 *   对于事务处理来说，最基础或者说最首要的工作便是获取事务属性了，这是支撑整个事务功能的基石，如果没有事务属性，
+	 *   其他功能也无从谈起，在分析事务准备阶段时我们已经分析了事务属性提取的功能，大家应该有所了解。
+	 *
+	 * 2.加载配置中配置的 TransactionManager。
+	 *
+	 * 3.不同的事务处理方式使用不同的逻辑。
+	 *   对于声明式事务的处理与编程式事务的处理，第一点区别在于事务属性上， 因为编程式的事务处理是不需要有事务属性的，
+	 *   第二点区别就是在 TransactionManager 上， CallbackPreferringPlatformTransactionManager 实现
+	 *   PlatformTransactionManager 接口， 暴露出一个方法用于执行事务处理中的回调。所以，这两种方式都可以用作事务处理方式的判断。
+	 *
+	 * 4.在目标方法执行前获取事务并收集事务信息。
+	 *   事务信息与事务属性并不相同，也就是 TransactionInfo 与 TransactionAttribute 并不相同，
+	 *   TransactionInfo 中包含 TransactionAttribute 信息，但是，除了 TransactionAttribute 外还有其他事务信息，
+	 *   例如 PlatformTransactionManager 以及 TransactionStatus 相关信息。
+	 *
+	 * 5. 执行目标方法。
+	 *
+	 * 6. 一旦出现异常，尝试异常处理。
+	 *    不是所有异常， Spring 都会将其回滚，默认只对 RuntimeException 回滚。
+	 *
+	 * 7. 提交事务前的事务信息清除。
+	 *
+	 * 8. 提交事务。
+	 * 上面的步骤分析旨在让大家对事务功能与步骤有个大致的了解，具体的功能还需要详细地分析。
+	 *
 	 * @param method the Method being invoked
 	 * @param targetClass the target class that we're invoking the method on
 	 * @param invocation the callback to use for proceeding with the target invocation
@@ -338,26 +369,33 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 
 		// If the transaction attribute is null, the method is non-transactional.
 		TransactionAttributeSource tas = getTransactionAttributeSource();
+		// 获取对应事务属性
 		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
+		// 获取 beanFactory 中的 transactionManager
 		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
+		// 构造方法唯一标识（类.方法，如 service.UserServiceImpl.save)
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
-
+		//声明式事务处理
 		if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManager)) {
 			// Standard transaction demarcation with getTransaction and commit/rollback calls.
+			// 创建 TransactionInfo 事务创建的过程
 			TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
 
 			Object retVal;
 			try {
 				// This is an around advice: Invoke the next interceptor in the chain.
 				// This will normally result in a target object being invoked.
+				// 执行被增强方法
 				retVal = invocation.proceedWithInvocation();
 			}
 			catch (Throwable ex) {
 				// target invocation exception
+				// 异常回滚
 				completeTransactionAfterThrowing(txInfo, ex);
 				throw ex;
 			}
 			finally {
+				//清除信息
 				cleanupTransactionInfo(txInfo);
 			}
 
@@ -368,7 +406,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 					retVal = VavrDelegate.evaluateTryFailure(retVal, txAttr, status);
 				}
 			}
-
+			//提交事务
 			commitTransactionAfterReturning(txInfo);
 			return retVal;
 		}
@@ -377,6 +415,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			final ThrowableHolder throwableHolder = new ThrowableHolder();
 
 			// It's a CallbackPreferringPlatformTransactionManager: pass a TransactionCallback in.
+			//编程式事务处理
 			try {
 				Object result = ((CallbackPreferringPlatformTransactionManager) tm).execute(txAttr, status -> {
 					TransactionInfo txInfo = prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
@@ -532,6 +571,16 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	 * Create a transaction if necessary based on the given TransactionAttribute.
 	 * <p>Allows callers to perform custom TransactionAttribute lookups through
 	 * the TransactionAttributeSource.
+	 *
+	 * 对于 createTransactionIfNecessary 函数主要做了这样几件事情。
+	 * 1. 使用 DelegatingTransactionAttribute 封装传入的 TransactionAttribute 实例。
+	 *    对于传入的 TransactionAttribute 类型的参数 txAttr，当前的实际类型是 RuleBasedTransactionAttribute ，
+	 *    是由获取事务属性时生成，主要用于数据承载，而这里之所以使用 RuleBasedTransactionAttribute 进行封装 ，
+	 *    当然是提供了更多的功能。
+	 * 2. 获取事务。
+	 *    事务处理当然是以事务为核心，那么获取事务就是最重要的事情。
+	 * 3. 构建事务信息。
+	 *
 	 * @param txAttr the TransactionAttribute (may be {@code null})
 	 * @param joinpointIdentification the fully qualified method name
 	 * (used for monitoring and logging purposes)
@@ -545,6 +594,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			@Nullable TransactionAttribute txAttr, final String joinpointIdentification) {
 
 		// If no name specified, apply method identification as transaction name.
+		// 如果没有名称指定则使用方法唯一标识，并使用 DelegatingTransactionAttribute 封装 txAttr
 		if (txAttr != null && txAttr.getName() == null) {
 			txAttr = new DelegatingTransactionAttribute(txAttr) {
 				@Override
@@ -557,6 +607,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		TransactionStatus status = null;
 		if (txAttr != null) {
 			if (tm != null) {
+				// 获取 TransactionStatus
 				status = tm.getTransaction(txAttr);
 			}
 			else {
@@ -566,6 +617,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				}
 			}
 		}
+		// 根据指定的属性与 status 准备一个TransactionInfo
 		return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 	}
 

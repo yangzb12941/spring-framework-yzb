@@ -64,6 +64,9 @@ public class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParse
 			registerAsyncExecutionAspect(element, parserContext);
 		}
 		else {
+			//在解析中存在对于 mode 属性的判断，根据代码，如果我们需要使用 AspectJ 的方式进行
+			//事务切入（ Spring 中的事务是以 AOP 为基础的 ），那么可以使用这样的配置 ：
+			// <tx:annotation-driven-transaction-manager="transactionManager" mode＝"aspectj"/>
 			// mode="proxy"
 			if (registry.containsBeanDefinition(TaskManagementConfigUtils.ASYNC_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				parserContext.getReaderContext().error(

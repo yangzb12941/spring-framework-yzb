@@ -306,6 +306,7 @@ public abstract class StatementCreatorUtils {
 			if (strVal.length() > 4000) {
 				// Necessary for older Oracle drivers, in particular when running against an Oracle 10 database.
 				// Should also work fine against other drivers/databases since it uses standard JDBC 4.0 API.
+				// 对于较旧的Oracle驱动程序是必需的，尤其是在针对Oracle 10数据库运行时。由于它使用了标准的JDBC4.0 API，因此对其他驱动程序数据库也应该很好地工作。
 				if (sqlType == Types.NCLOB) {
 					ps.setNClob(paramIndex, new StringReader(strVal), strVal.length());
 				}

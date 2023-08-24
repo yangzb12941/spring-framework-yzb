@@ -109,6 +109,9 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 		}
 		else {
 			// We need to work it out.
+			// 在 getTransactionAttribute 函数中并没有找到我们想要的代码，这里是指常规的一贯的
+			// 套路。尝试从缓存加载，如果对应信息没有被缓存的话，工作又委托给了 computeTransactionAttribute 两数，
+			// 在 computeTransactionAttribute 函数中终于的我们看到了事务标签的提取过程。
 			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
@@ -143,6 +146,14 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 	/**
 	 * Same signature as {@link #getTransactionAttribute}, but doesn't cache the result.
 	 * {@link #getTransactionAttribute} is effectively a caching decorator for this method.
+	 *
+	 * 对于事务属性的获取规则相信大家都已经很清楚，如果方法中存在事务属性，则使用方法上的属性，
+	 * 否则使用方法所在的类上的属性，如果方法所在类的属性上还是没有搜寻到对应的事务属性，
+	 * 那么再搜寻接口中的方法，再没有的话，最后尝试搜寻接口的类上面的声明。
+	 * 对于函数 computeTransactionAttribute 中的逻辑与我们所认识的规则并无差别，
+	 * 但是下面函数中并没有真正的去做搜寻事务属性的逻辑，而是搭建了个执行框架，将搜寻事务属性的任务委托给了
+	 * findTransactionAttribute 方法去执行。
+	 *
 	 * <p>As of 4.1.8, this method can be overridden.
 	 * @since 4.1.8
 	 * @see #getTransactionAttribute
@@ -156,27 +167,33 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 
 		// The method may be on an interface, but we need attributes from the target class.
 		// If the target class is null, the method will be unchanged.
+		// Method 代表接口中的方法， specificMethod 代表实现类中的方法
 		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
 
 		// First try is the method in the target class.
+		// 查看方法中是有存在事务申明
 		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
 		}
 
 		// Second try is the transaction attribute on the target class.
+		// 查看方法所在类巾是否存在事务申明
 		txAttr = findTransactionAttribute(specificMethod.getDeclaringClass());
 		if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
 			return txAttr;
 		}
-
+		//如果存在接口. 则到接口中去寻找
 		if (specificMethod != method) {
 			// Fallback is to look at the original method.
+			// 查找接口方法
 			txAttr = findTransactionAttribute(method);
 			if (txAttr != null) {
 				return txAttr;
 			}
 			// Last fallback is the class of the original method.
+			// 到接口中的类中去寻找
+			// org.springframework.transaction.annotation.AnnotationTransactionAttributeSource.findTransactionAttribute(java.lang.Class<?>)
 			txAttr = findTransactionAttribute(method.getDeclaringClass());
 			if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
 				return txAttr;

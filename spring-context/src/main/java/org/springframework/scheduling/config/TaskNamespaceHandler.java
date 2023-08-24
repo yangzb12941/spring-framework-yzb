@@ -28,6 +28,7 @@ public class TaskNamespaceHandler extends NamespaceHandlerSupport {
 
 	@Override
 	public void init() {
+		//在遇到诸如＜tx:annotation-driven> 为开头的配置后， Spring 都会使用 AnnotationDrivenBeanDefinitionParser 类的 parse 方法进行解析。
 		this.registerBeanDefinitionParser("annotation-driven", new AnnotationDrivenBeanDefinitionParser());
 		this.registerBeanDefinitionParser("executor", new ExecutorBeanDefinitionParser());
 		this.registerBeanDefinitionParser("scheduled-tasks", new ScheduledTasksBeanDefinitionParser());

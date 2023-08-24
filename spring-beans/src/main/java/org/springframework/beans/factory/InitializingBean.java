@@ -25,6 +25,8 @@ package org.springframework.beans.factory;
  * init method, for example in an XML bean definition. For a list of all bean
  * lifecycle methods, see the {@link BeanFactory BeanFactory javadocs}.
  *
+ * InitializingBean： 实现此接口的 bean 会在初始化时调用其 afterPropertiesSet 方法来进 行 bean 的逻辑初始化。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see DisposableBean

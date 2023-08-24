@@ -24,6 +24,11 @@ import org.springframework.lang.Nullable;
  * Auto-proxy creator that considers infrastructure Advisor beans only,
  * ignoring any application-defined Advisors.
  *
+ * 层次结构中可以看到， InfrastructureAdvisorAutoProxyCreator 间接实现了 SmartInstantiationAwareBeanPostProcessor，
+ * 而 SmartInstantiationAwareBeanPostProcessor 又继承自 InstantiationAwareBeanPostProcessor，
+ * 也就是说在 Spring 中，所有 bean 实例化时 Spring 都会 保证调用其 postProcessAfterInitialization 方法，
+ * 其实现是在父类 AbstractAutoProxyCreator 类中 实现。
+ *
  * @author Juergen Hoeller
  * @since 2.0.7
  */

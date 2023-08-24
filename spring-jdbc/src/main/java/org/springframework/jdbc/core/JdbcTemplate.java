@@ -608,12 +608,14 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 			String sql = getSql(psc);
 			logger.debug("Executing prepared SQL statement" + (sql != null ? " [" + sql + "]" : ""));
 		}
-
+		// 获取数据库连接
 		Connection con = DataSourceUtils.getConnection(obtainDataSource());
 		PreparedStatement ps = null;
 		try {
 			ps = psc.createPreparedStatement(con);
+			//应用用户设定的输入参数
 			applyStatementSettings(ps);
+			//调用回调函数
 			T result = action.doInPreparedStatement(ps);
 			handleWarnings(ps);
 			return result;
@@ -621,6 +623,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		catch (SQLException ex) {
 			// Release Connection early, to avoid potential connection pool deadlock
 			// in the case when the exception translator hasn't been initialized yet.
+			// 释放数据库连接避免当异常转换器没有被初始化的时候出现潜在的连接池死锁
 			if (psc instanceof ParameterDisposer) {
 				((ParameterDisposer) psc).cleanupParameters();
 			}
@@ -667,12 +670,26 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		logger.debug("Executing prepared SQL query");
 
 		return execute(psc, new PreparedStatementCallback<T>() {
+			// PreparedStatementCallback 作为一个接口，其中只有一个函数 doInPreparedStatement，
+			// 这个函数是用于调用通用方法 execute 的时候无法处理的一些个性化处理方法，在 update 中的函数 实现：
+			// 1、PreparedStatement 接口继承 Statement，并与之在两方面有所不同。 PreparedStatement 实例包含己编译的 SQL 语句 。
+			// 这就是使语句“准备好”。 包含于 PreparedStatement 对象中的 SQL 语句可具有一个或多个 IN 参数。
+			// IN 参数的值在 SQL 语句创建时未被指定。 相反的，该语句为每个 IN 参数保留一个问号 （ ”？” ）作为占位 符。
+			// 每个问号的值必须在该语句执行之前，通过适当的 setXXX 方法来提供。
+			// 2、由于 PreparedStatement 对象已预编译过，所以其执行速度快于 Statement 对象。
+			// 因此，多次执行的 SQL 语句经常创建为 PreparedStatement 对象，以提高效率。
+
+			//作为 Statement 的子类， PreparedStatement 继承了 Statement 的所有功能。 另外，它还添加
+			//了一整套方法，用于设置发送给数据库以取代 IN 参数占位符的值。
+			// 同时， 三种方法 execute 、 executeQuery 和 executeUpdate 已被更改以使之不再需要参数。
+			// 这些方法的 Statement 形式（接受 SQL 语句参数的形式）不应该用于 PreparedStatement 对象。
 			@Override
 			@Nullable
 			public T doInPreparedStatement(PreparedStatement ps) throws SQLException {
 				ResultSet rs = null;
 				try {
 					if (pss != null) {
+						//设置 PreparedStatement 所需的全部参数
 						pss.setValues(ps);
 					}
 					rs = ps.executeQuery();
@@ -1398,13 +1415,26 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 	/**
 	 * Throw an SQLWarningException if we're not ignoring warnings,
 	 * otherwise log the warnings at debug level.
+	 *
+	 * 警告可以从 Connection 、 Statement 和 ResultSet 对象中获得。 试图在已经关
+	 * 闭的连接上获取警告将导致抛出异常。类似地，试图在已经关闭的语句上或已经关闭的结果集
+	 * 上获取警告也将导致抛出异常。 注意，关闭语句时还会关 闭它可能生成的结果集。
+	 *
+	 * 很多人不是很理解什么情况下会产生警告而不是异常，在这里给读者提示个最常见的警告
+	 * DataTruncation: DataTruncation 直接继承 SQLWarning，由于某种原因意外地截断
+	 * 数据值时会以 DataTruncation 警告形式报告异常。 对于警告的处理方式并不是直接抛出异常，
+	 * 出现警告很可能会出现数据错误。但是，并不一定会影响程序执行，所以用户可以自己设置处理警告的方式，
+	 * 如默认的是忽略警告，当出现 警告时只打印警告日志，而另一种方式只直接抛出异常。
+	 *
 	 * @param stmt the current JDBC statement
 	 * @throws SQLWarningException if not ignoring warnings
 	 * @see org.springframework.jdbc.SQLWarningException
 	 */
 	protected void handleWarnings(Statement stmt) throws SQLException {
+		//当设置为忽略警告时只尝试打印日志
 		if (isIgnoreWarnings()) {
 			if (logger.isDebugEnabled()) {
+				//如果日志开启的情况下打印日志
 				SQLWarning warningToLog = stmt.getWarnings();
 				while (warningToLog != null) {
 					logger.debug("SQLWarning ignored: SQL state '" + warningToLog.getSQLState() + "', error code '" +

@@ -215,6 +215,19 @@ public abstract class AopUtils {
 	 * Can the given pointcut apply at all on the given class?
 	 * <p>This is an important test as it can be used to optimize
 	 * out a pointcut for a class.
+	 *
+	 * 那么，使用 TransactionAttributeSourcePointcut 类型的实例作为函数参数继续跟踪 canApply。
+	 *
+	 * 通过下面函数大致可以理清大体脉络，
+	 * 首先获取对应类的所有接口并连同类本身一起遍历，遍历过程中又对类中的方法再次遍历 ，
+	 * 一旦匹配成功便认为这个类适用于当前增强器。
+	 *
+	 * 到这里我们不禁会有疑问，对于事务的配置不仅仅局限于在函数上配置，我们都知道，在
+	 * 类或接口上的配置可以延续到类中的每个函数。那么，如果针对每个函数进行检测，
+	 * 在类本身上配置的事务属性岂不是检测不到了吗？
+	 *
+	 * 带着这个疑问， 我们继续探求 matcher 方法。
+	 *
 	 * @param pc the static or dynamic pointcut to check
 	 * @param targetClass the class to test
 	 * @param hasIntroductions whether or not the advisor chain
@@ -226,7 +239,8 @@ public abstract class AopUtils {
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
-
+		// 此时的 pc 表示 TransactionAttributeSourcePointcut.
+		// pc.getMethodMatcher返回的正是自身(this)
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
@@ -327,6 +341,13 @@ public abstract class AopUtils {
 				continue;
 			}
 			//对于普通 bean 的处理
+			//那么当前的 advisor 就是之前
+			//查找出来的类型为 BeanFactoryTransactionAttributeSourceAdvisor 的 bean 实例，
+			//而通过类的层次结构我们又知道： BeanFactoryTransactionAttributeSourceAdvisor
+			// 间接实现了 PointcutAdvisor。 因此，在 canApply 函数中的第二个 if 判断时就会通过判断，
+			// 会将 Bean.FactoryTransactionAttributeSourceAdvisor 中的 getPointcut()方法返回
+			// 值作为参数继续调用 canApply 方法，而 getPoint（）方法返回的是 TransactionAttributeSourcePointcut
+			// 类型的实例。 对于 transactionAttributeSource 这个属性大家还有印象吗？这是在解析自定义标签时注入进去的。
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

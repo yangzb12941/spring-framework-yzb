@@ -119,6 +119,7 @@ public interface FactoryBean<T> {
 	 *
 	 * 在该接口中还定义了以下3 个方法。
 	 * T getObject():返回由FactoryBean 创建的 bean 实例，如果isSingleton()返回 true，则该实例会放到 Spring 容器中单实例缓存池中。
+	 * 一旦某个 bean 实现次接口，那么通过 getBean 方法获取 bean 时其实是获取此类的 getObject（）返回的 实例 。
 	 *
 	 * @return an instance of the bean (can be {@code null})
 	 * @throws Exception in case of creation errors

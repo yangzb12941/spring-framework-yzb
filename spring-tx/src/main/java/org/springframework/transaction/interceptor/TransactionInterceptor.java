@@ -42,6 +42,9 @@ import org.springframework.transaction.PlatformTransactionManager;
  * such as {@link #invokeWithinTransaction} in the correct order.
  *
  * <p>TransactionInterceptors are thread-safe.
+ * TransactionInterceptor 支撑着整个事务功能的架构，TransactionInterceptor 类继承自 MethodInterceptor，所
+ * 以调用该类是从其 invoke 方法开始的， 首先预览下这个方法invoke
+ *
  *
  * @author Rod Johnson
  * @author Juergen Hoeller

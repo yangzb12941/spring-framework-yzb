@@ -93,6 +93,15 @@ public abstract class DataSourceUtils {
 	 * when using {@link DataSourceTransactionManager}. Will bind a Connection to the thread
 	 * if transaction synchronization is active (e.g. if in a JTA transaction).
 	 * <p>Directly accessed by {@link TransactionAwareDataSourceProxy}.
+	 *
+	 * 实际上，从给定的DataSource获取JDBC连接。与getConnection相同，但抛出原始SQLException。
+	 * 知道绑定到当前线程的相应Connection，例如在使用DataSourceTransactionManager时。
+	 * 如果事务同步处于活动状态（例如在JTA事务中），则将连接绑定到线程。 TransactionAwareDataSourceProxy直接访问。
+	 *
+	 * 获取数据库连接也并非直接使用 dataSource.getConnection（）方法那么简单，同样也考虑了诸多情况。
+	 *
+	 * 在数据库连接方面， Spring 主要考虑的是关于事务方面的处理。 基于事务处理的特殊性， Spring 需要保证线程中的数据库操作都是使用同一个事务连接。
+	 *
 	 * @param dataSource the DataSource to obtain Connections from
 	 * @return a JDBC Connection from the given DataSource
 	 * @throws SQLException if thrown by JDBC methods
@@ -114,11 +123,12 @@ public abstract class DataSourceUtils {
 
 		logger.debug("Fetching JDBC Connection from DataSource");
 		Connection con = fetchConnection(dataSource);
-
+		// 当前线程支持同步
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
 			try {
 				// Use same Connection for further JDBC actions within the transaction.
 				// Thread-bound object will get removed by synchronization at transaction completion.
+				// 在事务中使用同一数据库连接
 				ConnectionHolder holderToUse = conHolder;
 				if (holderToUse == null) {
 					holderToUse = new ConnectionHolder(con);
@@ -126,6 +136,7 @@ public abstract class DataSourceUtils {
 				else {
 					holderToUse.setConnection(con);
 				}
+				// 记录数据库连接
 				holderToUse.requested();
 				TransactionSynchronizationManager.registerSynchronization(
 						new ConnectionSynchronization(holderToUse, dataSource));
@@ -177,6 +188,7 @@ public abstract class DataSourceUtils {
 		Assert.notNull(con, "No Connection specified");
 
 		// Set read-only flag.
+		// 设置数据连接的只读标识
 		if (definition != null && definition.isReadOnly()) {
 			try {
 				if (logger.isDebugEnabled()) {
@@ -199,6 +211,7 @@ public abstract class DataSourceUtils {
 		}
 
 		// Apply specific isolation level, if any.
+		// 设置数据库连接的隔离级别
 		Integer previousIsolationLevel = null;
 		if (definition != null && definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT) {
 			if (logger.isDebugEnabled()) {
@@ -303,6 +316,11 @@ public abstract class DataSourceUtils {
 	/**
 	 * Close the given Connection, obtained from the given DataSource,
 	 * if it is not managed externally (that is, not bound to the thread).
+	 *
+	 * 数据库的连接释放并不是直接调用了 Connection 的 API 中的 close 方法。考虑到存在事务
+	 * 的情况，如果当前线程存在事务，那么说明在当前线程中存在共用数据库连接，这种情况下直接使用
+	 * ConnectionHolder 中的 released 方法进行连接数减一， 而不是真正的释放连接。
+	 *
 	 * @param con the Connection to close if necessary
 	 * (if this is {@code null}, the call will be ignored)
 	 * @param dataSource the DataSource that the Connection was obtained from
@@ -337,6 +355,8 @@ public abstract class DataSourceUtils {
 			return;
 		}
 		if (dataSource != null) {
+			// 当前线程存在事务的情况下说明存在共用数据库连接直接使用 ConnectionHolder 中的
+			//released方法进行连接数减一而不是真正的释放连接
 			ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
 			if (conHolder != null && connectionEquals(conHolder, con)) {
 				// It's the transactional Connection: Don't close it.

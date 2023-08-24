@@ -104,6 +104,7 @@ public class SingleColumnRowMapper<T> implements RowMapper<T> {
 	@Nullable
 	public T mapRow(ResultSet rs, int rowNum) throws SQLException {
 		// Validate column count.
+		// 验证返回结果数
 		ResultSetMetaData rsmd = rs.getMetaData();
 		int nrOfColumns = rsmd.getColumnCount();
 		if (nrOfColumns != 1) {
@@ -111,10 +112,15 @@ public class SingleColumnRowMapper<T> implements RowMapper<T> {
 		}
 
 		// Extract column value from JDBC ResultSet.
+		// 从JDBC ResultSet中提取列值。
+		// 抽取第一个结果进行处理
 		Object result = getColumnValue(rs, 1, this.requiredType);
 		if (result != null && this.requiredType != null && !this.requiredType.isInstance(result)) {
 			// Extracted value does not match already: try to convert it.
+			// 提取的值已不匹配：请尝试转换它。
+			// 转换到对应的类型
 			try {
+				// 对应的类型转换函数 ：
 				return (T) convertValueToRequiredType(result, this.requiredType);
 			}
 			catch (IllegalArgumentException ex) {
@@ -197,10 +203,13 @@ public class SingleColumnRowMapper<T> implements RowMapper<T> {
 		else if (Number.class.isAssignableFrom(requiredType)) {
 			if (value instanceof Number) {
 				// Convert original Number to target Number class.
+				// 将原始Number转换为目标Number类。
+				// 转换原始 Number 类型的实体到 Number 类
 				return NumberUtils.convertNumberToTargetClass(((Number) value), (Class<Number>) requiredType);
 			}
 			else {
 				// Convert stringified value to target Number class.
+				// 转换 string 类型的值到 Number 类
 				return NumberUtils.parseNumber(value.toString(),(Class<Number>) requiredType);
 			}
 		}
