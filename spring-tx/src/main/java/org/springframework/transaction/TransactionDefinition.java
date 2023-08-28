@@ -187,6 +187,7 @@ public interface TransactionDefinition {
 	/**
 	 * Use the default timeout of the underlying transaction system,
 	 * or none if timeouts are not supported.
+	 * 使用底层事务系统的默认超时，如果不支持超时，则不使用。
 	 */
 	int TIMEOUT_DEFAULT = -1;
 

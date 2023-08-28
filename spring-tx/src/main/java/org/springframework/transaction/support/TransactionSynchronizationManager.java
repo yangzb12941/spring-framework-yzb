@@ -197,6 +197,7 @@ public abstract class TransactionSynchronizationManager {
 		}
 		Object oldValue = map.put(actualKey, value);
 		// Transparently suppress a ResourceHolder that was marked as void...
+		// 抑制标记为void的ResourceHolder
 		if (oldValue instanceof ResourceHolder && ((ResourceHolder) oldValue).isVoid()) {
 			oldValue = null;
 		}
@@ -326,6 +327,8 @@ public abstract class TransactionSynchronizationManager {
 		// Return unmodifiable snapshot, to avoid ConcurrentModificationExceptions
 		// while iterating and invoking synchronization callbacks that in turn
 		// might register further synchronizations.
+		// 返回不可修改的快照，以避免在迭代和调用同步回调时出现ConcurrentModificationException，
+		// 而同步回调反过来可能会注册进一步的同步。
 		if (synchs.isEmpty()) {
 			return Collections.emptyList();
 		}
