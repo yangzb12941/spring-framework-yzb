@@ -808,11 +808,21 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>If no HandlerAdapter beans are defined in the BeanFactory for this namespace,
 	 * we default to SimpleControllerHandlerAdapter.
 	 *
-	 * 5 . 初始化 HandlerAdapters。 从名字也能联想到这是一个典型的适配器模式的使用，在计算机编程中，
+	 * 5.初始化 HandlerAdapters。
+	 * 从名字也能联想到这是一个典型的适配器模式的使用，在计算机编程中，
 	 * 适配器模式将一个类的接口适配成用户所期待的。 使用适配器，可以使接口不兼容而无法在一起工作的类协同工作，
 	 * 做法是将类自己的接口包裹在一个己存在的类中。 那么在处理 handler 时为什么会使用适配器模式呢？
 	 * 回答这个问题我们首先要分析它的初始化逻辑。
 	 *
+	 * 同样在初始化的过程中涉及了一个变量 detectAllHandlerAdapters ,
+	 * detectAllHandlerAdapters 作用和 detectAllHandlerMappings 类似，只不过作用对象为 handlerAdapter。
+	 * 亦可通过如下配置来强制系统只加载 bean name 为 "handlerAdapter" handlerAdapter。
+	 * <init-param>
+	 *     <param-name>detectAllHandlerAdapters</param-name>
+	 *     <param-value>false</param-value>
+	 * </init-param>
+	 *
+	 * 如果无法找到对应的 bean，那么系统会尝试加载默认的适配器。
 	 */
 	private void initHandlerAdapters(ApplicationContext context) {
 		this.handlerAdapters = null;
@@ -839,7 +849,11 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Ensure we have at least some HandlerAdapters, by registering
 		// default HandlerAdapters if no other adapters are found.
+		// 如果找不到其他适配器，请注册默认的HandlerAdapters，确保我们至少有一些HandlerAdapter。
+		// 如果无法找到对应的 bean，那么系统会尝试加载默认的适配器。
 		if (this.handlerAdapters == null) {
+			// 在 getDefaultStrategies 函数中， Spring 会尝试从 defaultStrategies 中加载对应的
+			// HandlerAdapter 的属性，那么 defaultStrategies 是如何初始化的呢？
 			this.handlerAdapters = getDefaultStrategies(context, HandlerAdapter.class);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No HandlerAdapters declared for servlet '" + getServletName() +
@@ -852,6 +866,28 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the HandlerExceptionResolver used by this class.
 	 * <p>If no bean is defined with the given name in the BeanFactory for this namespace,
 	 * we default to no exception resolver.
+	 *
+	 * 基于 HandlerExceptionResolver 接口的异常处理，使用这种方式只需要实现 resolveException 方法，
+	 * 该方法返回一个 ModelAndView 对象，在方法内部对异常的类型进行判断，然后尝试生成对应的 ModelAndView 对象，
+	 * 如果该方法返回了 null ，则 Spring 会继续寻找其他的实现了 HandlerExceptionResolver 接口的 bean。
+	 * 换句话说，Spring 会搜索所有注册在其环境中的实现了 HandlerExceptionResolver 接口的 bean，逐个执行，
+	 * 直到返回了一个 ModelAndView 对象。
+	 *
+	 * public class ExceptionHandler implements HandlerExceptionResolvers{
+	 *     private static final Log logs = LogFactory.getLog(ExceptionHandler.class);
+	 *
+	 *     @Override
+	 *     public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response , Object obj, Exception exception){
+	 *        request.setAttribute("exception",exception.toString());
+	 *        request.setAttribute("exceptionStack",exception);
+	 *        logs.error(exception.toString(),exception);
+	 *        return new ModelAndView("error/exception");
+	 *     }
+	 * }
+	 *
+	 * 这个类必须声明到 Spring 中去，让 Spring 管理它，在 Spring 的配置文件 applicationContext.xml
+	 * 中增加以下内容 ：
+	 * <bean id= ”exceptionHandler” class=”com.test.exception.MyExceptionHandler”/>
 	 */
 	private void initHandlerExceptionResolvers(ApplicationContext context) {
 		this.handlerExceptionResolvers = null;
@@ -891,6 +927,37 @@ public class DispatcherServlet extends FrameworkServlet {
 	/**
 	 * Initialize the RequestToViewNameTranslator used by this servlet instance.
 	 * <p>If no implementation is configured then we default to DefaultRequestToViewNameTranslator.
+	 *
+	 * 当 Controller 处理器方法没有返回一个 View 对象或逻辑视图名称，并且在该方法中没有直
+	 * 接往 response 的输出流里面写数据的时候， Spring 就会采用约定好的方式提供一个逻辑视图名称。
+	 * 这个逻辑视图名称是通过 Spring 定义的 org.Springframework.web.servlet.RequestToViewNameTranslator
+	 * 接口的 getViewName 方法来实现的，我们可以实现自己的 RequestToViewNameTranslator 接口来约定好没有返回视
+	 * 图名称的时候如何确定视图名称。 Spring 已经给我们提供了一个它自己的实现，那就是
+	 * org.Springframework.web.servlet.view.DefaultRequestToViewNameTranslator。
+	 *
+	 * 在介绍 DefaultRequestToViewNameTranslator 是如何约定视图名称之前，先来看一下它支持用户定义的属性。
+	 * 1、prefix：前缀 ， 表示约定好的视图名称需要加上的前缀，默认是空串 。
+	 * 2、suffix ：后缀，表示约定好的视图名称需要加上的后缀， 默认是空串 。
+	 * 3、separator：分隔符，默认是斜杠“／” 。
+	 * 4、stripLeadingSlash：如果首字符是分隔符，是否要去除， 默认是 true 。
+	 * 5、stripTrailingSlash：如果最后一个字符是分隔符，是否要去除，默认是 true。
+	 * 6、stripExtension：如果请求路径包含扩展名是否要去除 ， 默认是 true。
+	 * 7、urlDecode：是否需要对 URL 解码，默认是 true 。 它会采用 request 指定的编码或者 IS0-8859-1 编码对 URL 进行解码。
+	 *
+	 * 当我们没有在 SpringMVC 的配置文件中手动的定义一个名为 viewNameTranslator 的 Bean
+	 * 的时候， Spring就会为我们提供一个默认的 viewNameTranslator ，即 DefaultRequestToViewNameTranslator。
+	 * 接下来看一下， 当 Controller 处理器方法没有返回逻辑视图名称时， DefaultRequestToViewNameTranslator
+	 * 是如何约定视图名称的。
+	 * DefaultRequestToViewNameTranslator 会获取到请求的 URL，然后根据提供的属性做一些改造，把改造之后的结果作为视图名称返回。
+	 * 这里以请求路径 http://localhost/app/test/index.html 为例，来说明一下 DefaultRequestToViewNameTranslator 是如何工作的。
+	 * 该请求路径对应的请求 URL为/test/index.html，我们来看以下几种情况， 它分别对应的逻辑视图名称是什么。
+	 * A、prefix 和 suffix 如果都存在，其他为默认值，那么对应返回的逻辑视图名称应该是 prefixtest/indexsuffix。
+	 * B、stripLeadingSlash 和 stripExtension 都为 false ，其他默认， 这时候对应的逻辑视图名称是/product/index.html。
+	 * C、都采用默认配置时，返回的逻辑视图名称应该是 product/index。
+	 *
+	 * 如果逻辑视图名称跟请求路径相同或者相关关系都是一样的 ， 那么我们就可以采用 Spring
+	 * 为我们事先约定好的逻辑视图名称返回，这可以大大简化我们的开发工作，而以上功能实现的关键属性 viewNameTranslator，
+	 * 则是在 initRequestToViewNameTranslator 中完成。
 	 */
 	private void initRequestToViewNameTranslator(ApplicationContext context) {
 		try {
@@ -917,6 +984,19 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the ViewResolvers used by this class.
 	 * <p>If no ViewResolver beans are defined in the BeanFactory for this
 	 * namespace, we default to InternalResourceViewResolver.
+	 *
+	 * 在 SpringMVC 中，当 Controller 将请求处理结果放入到 ModelAndView 中以后 ， DispatcherServlet
+	 * 会根据 ModelAndView 选择合适的视图进行渲染。 那么在 SpringMVC 中是如 何选择合适的 View 呢？
+	 *
+	 * View 对象是是如何创建的呢？
+	 *
+	 * 答案就在 ViewResolver 中。 ViewResolver接口定义了 resolverViewName 方法，
+	 * 根据 viewName 创建合适类型的 View 实现。 那么如何配置 ViewResolver 呢？
+	 * 在 Spring 中， ViewResolver 作为 Spring Bean存在，可以在 Spring 配置文件中进行配置，例如下面的代码，配置了 JSP 相关的 viewResolver。
+	 * <bean class= ”org.Sprinqframework.web.servlet.view.InternalResourceViewResolver">
+	 *     <property name=”prefix” value=”/WEB-INF/views/”/>
+	 *     <property name=”suffix" value=”.jsp” />
+	 * </bean>
 	 */
 	private void initViewResolvers(ApplicationContext context) {
 		this.viewResolvers = null;
@@ -956,6 +1036,16 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the {@link FlashMapManager} used by this servlet instance.
 	 * <p>If no implementation is configured then we default to
 	 * {@code org.springframework.web.servlet.support.DefaultFlashMapManager}.
+	 *
+	 * SpringMVC Flash attributes 提供了一个请求存储属性，可供其他请求使用。 在使用重定向
+	 * 时候非常必要，例如 Post/Redirect/Get 模式。 Flash attributes 在重定向之前暂存（就像存在 session 中）
+	 * 以便重定向之后还能使用，并立即删除。
+	 * SpringMVC 有两个主要的抽象来支持 flash attributes。 FlashMap 用于保持 flash attributes,
+	 * 而 FlashMapManager 用于存储、检索、管理 FlashMap 实例。 flash attributes 支持默认开启（ ”on” ）并不
+	 * 需要显式启用，它永远不会导致 HTTP Session 的创建。
+	 *
+	 * 这两个 FlashMap 实例都可以通过静态方法 RequestContextUtils 从 SpringMVC 的任何位置访问。
+	 * flashMapManager 的初始化在 initFlashMapManager 中完成。
 	 */
 	private void initFlashMapManager(ApplicationContext context) {
 		try {
@@ -1037,6 +1127,32 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>The default implementation uses the "DispatcherServlet.properties" file (in the same
 	 * package as the DispatcherServlet class) to determine the class names. It instantiates
 	 * the strategy objects through the context's BeanFactory.
+	 *
+	 * 在系统加载的时候， defaultStrategies 根据当前路径 DispatcherServlet.properties 来初始化本
+	 * 身，查看 DispatcherServlet.properties 中对应于 HandlerAdapter 的属性：
+	 * org.Springframework.web.servlet.HandlerAdapter=org.Springframework.web.servlet.mvc.HttpRequestHandlerAdapter , \
+	 * org.Springframework.web.servlet.mvc.SimpleControllerHandlerAdapter , \
+	 * org.Springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter
+	 * 由此得知，如果程序开发人员没有在配置文件中定义自己的适配器，那么 Spring 会默认加
+	 * 载配置文件中的 3 个适配器。
+	 * 作为总控制器的派遣器 servlet 通过处理器映射得到处理器后，会轮询处理器适配器模块，查找能够处理当前 HTTP 请求的处理器适配器的实现，
+	 * 处理器适配器模块根据处理器映射返回的处理器类型，例如简单的控制器类型、注解控制器类型或者远程调用处理器类型，来选择某一个适当的处理
+	 * 器适配器的实现，从而适配当前的 HTTP 请求。
+	 * 1、HTTP 请求处理器适配器（ HttpRequestHandlerAdapter ）。
+	 *   HTTP 请求处理器适配器仅仅支持对 HTTP 请求处理器的适配。 它简单地将 HTTP 请求对象和响应对象传递给 HTTP
+	 *   请求处理器的实现，它并不需要返回值。 它主要应用在基于 HTTP 的远程调用的实现上。
+	 *
+	 * 2、简单控制器处理器适配器（ SimpleControllerHandlerAdapter ）。
+	 *   这个实现类将 HTTP 请求适配到一个控制器的实现进行处理。 这里控制器的实现是一个简单的控制器接口的实现。
+	 *   简单控制器处理器适配器被设计成一个框架类的实现，不需要被改写，客户化的业务逻辑通常是在控制器接口的实现类中实现的。
+	 *
+	 * 3、注解方法处理器适配器（ AnnotationMethodHandlerAdapter ）。
+	 *   这个类的实现是基于注解的实现，它需要结合注解方法映射和注解方法处理器协同工作。 它通过解析声明在注解控制器的请求
+	 *   映射信息来解析相应的处理器方法来处理当前的 HTTP 请求。在处理的过程中，它通过反射来发现探测处理器方法的参数，
+	 *   调用处理器方法，并且映射返回值到模型和控制器对象，最后返回模型和控制器对象给作为主控制器的派遣器 Servlet。
+	 *   所以我们现在基本上可以回答之前的问题了，Spring中所使用的 Handler 并没有任何特殊的联系，但是为了统一处理，
+	 *   Spring提供了不同情况下的适配器。
+	 *
 	 * @param context the current WebApplicationContext
 	 * @param strategyInterface the strategy interface
 	 * @return the List of corresponding strategy objects
