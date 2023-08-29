@@ -142,6 +142,26 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	/**
 	 * Map config parameters onto bean properties of this servlet, and
 	 * invoke subclass initialization.
+	 *
+	 * DispatcherServlet 的初始化过程主要是通过将当前的 servlet 类型实例转换为 BeanWrapper 类型实例，
+	 * 以便使用 Spring 中提供的注入功能进行对应属性的注入。 这些属性如 contextAttribute、contextClass、
+	 * nameSpace、contextConfigLocation 等，都可以在 web.xml 文件中以初始化参数的方式配置在 servlet 的声明中。
+	 * DispatcherServlet 继承自 FrameworkServlet, FrameworkServlet 类上包含对应的同名属性，
+	 * Spring 会保证这些参数被注入到对应的值中。 属性注入主要包含以下几个步骤。
+	 * 1 .封装及验证初始化参数
+	 * 2. 将当前 Servlet 实例转化成 BeanWrapper 实例
+	 *  PropertyAccessorFactory.forBeanPropertyAccess 是 Spring 中提供的工具方法，主要用于将指
+	 * 定实例转化为 Spring 中可以处理的 BeanWrapper 类型的实例。
+	 * 3. 注册相对于 Resource 的属性编辑器
+	 *  属性编辑器，我们在上文中已经介绍并且分析过其原理，这里使用属性编辑器的目的是在
+	 *  对当前实例（ DispatcherServlet ）属性注入过程中一旦遇到 Resource 类型的属性就会使用 ResourceEditor 去解析。
+	 * 4. 属性注入
+	 *   BeanWrapper 为 Spring 中的方法 ， 支持 Spring 的自动注入。其实我们最常用的属性注入无
+	 *  非是 contextAttribute、 contextClass 、 nameSpace 、 contextConfigLocation 等。
+	 * 5.servletBean 的初始化
+	 *  在 ContextLoaderListener 加载的时候已经创建了 WebApplicationContext 实例，而在这个函
+	 *  数中最重要的就是对这个实例进行进一步的补充初始化。
+	 *
 	 * @throws ServletException if bean properties are invalid (or required
 	 * properties are missing), or if subclass initialization fails.
 	 */
@@ -149,13 +169,21 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	public final void init() throws ServletException {
 
 		// Set bean properties from init parameters.
+		// 解析init-param 并封装至pvs中
+		// 1 .封装及验证初始化参数
+		// ServletConfigPropertyValues 除了封装属性外还有对属性验证的功能。
 		PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
 		if (!pvs.isEmpty()) {
 			try {
+				// 将当前的这个 servlet 类转化为一个 BeanWrapper，从而能够以 Spring 的方式来对 init-param
+				// 的值进行注入
 				BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
 				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+				// 注册自定义属性编辑器 ，一旦遇到 Resource 类型的属性将会使用 ResourceEditor 进行解析
 				bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
+				//空实现，留给子类覆盖
 				initBeanWrapper(bw);
+				//属性注入
 				bw.setPropertyValues(pvs, true);
 			}
 			catch (BeansException ex) {
@@ -167,6 +195,8 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 		}
 
 		// Let subclasses do whatever initialization they like.
+		// 留给子类扩展
+		// 父类 FrameworkServlet 覆盖了 H即ServletBean 中的 initServletBean
 		initServletBean();
 	}
 
@@ -210,6 +240,12 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 
 		/**
 		 * Create new ServletConfigPropertyValues.
+		 *
+		 * 从代码中得知，封装属性主要是对初始化的参数进行封装，也就是 servlet 中配置的
+		 * <init-param></init-param>中配置的封装。 当然，用户可以通过对 requiredProperties
+		 * 参数的初始化来强制验证某些属性的必要性， 这样，在属性封装的过程中，一旦检测到 requiredProperties
+		 * 中的属性没有 指定初始值，就会抛出异常。
+		 *
 		 * @param config the ServletConfig we'll use to take PropertyValues from
 		 * @param requiredProperties set of property names we need, where
 		 * we can't accept default values

@@ -28,6 +28,51 @@ import javax.servlet.ServletContextListener;
  * constructor, allowing for programmatic configuration in Servlet 3.0+ environments.
  * See {@link org.springframework.web.WebApplicationInitializer} for usage examples.
  *
+ * 但是在 Web下，我们需要更多的是与 Web 环境相互结合，通常的办法是将路径以
+ * context-param 的方式注册并使用 ContextLoaderListener 进行监听读取。
+ * ContextLoaderListener 的作用就是启动 Web 容器时，自动装配 ApplicationContext 的配置信
+ * 息。 因为它实现了 ServletContextListener 这个接口，在 web.xml 配置这个监昕器，启动容器时，
+ * 就会默认执行它实现的方法，使用 ServletContextListener 接口，开发者能够在为客户端请求提供服
+ * 务之前向 ServletContext 中添加任意的对象。 这个对象在 ServletContext 启动的时候被初始化，
+ * 然后在 ServletContext 整个运行期间都是可见的。 每一个 Web 应用者附一个 ServletContext 与之相关联。
+ * ServletContext对象在应用启动时被创建， 在应用关闭的时候被销毁。 ServletContext 在全局范围内有效，
+ * 类似于应用中的一个全局变量。 在 ServletContextListener 中的核心逻辑便是初始化 WebApplicationContext
+ * 实例并存放至ServletContext 中。
+ *
+ * 正式分析代码前我们同样还是首先了解 ServletContextListener 的使用。
+ * 1. 创建自定义 ServletContextListener
+ *    首先我们创建 ServletContextListener，目标是在系统启动时添加自定义的属性，以便于在全局范围内可以随时调用 。
+ *    系统启动的时候会调用 ServletContextListener 实现类的 contextInitialized 方法，所以需要在这个方法中实现我们的初始化逻辑。
+ *  public class MyDataContextListener implements ServletContextListener{
+ *      private ServletContext context = null;
+ *
+ *      public MyDataContextListener(){
+ *
+ *      }
+ *
+ *      //该方法在ServletContext启动之后被调用，并准备好处理客户端请求
+ *      public void contextInitialized(ServletContextEvent event){
+ *          this.context = event.getServletContext();
+ *          //通过你可以实现自己的逻辑并将结果记录在属性中
+ *          context = setAttribute("myData","this is myData");
+ *      }
+ *
+ *      //这个方法在ServletContext 将要关闭的时候调用
+ *      public void contextDestroyed(ServletContextEvent event){
+ *          this.context = null;
+ *      }
+ *  }
+ *
+ *  2、注册监听器
+ *  在web.xml文件中需要注册自定义的监听器
+ *  <listener>
+ *      com.test.MyDataContextListener
+ *  </listener>
+ *
+ *  3、测试
+ *  一旦Web 应用启动的时候，我们就能在任意的Servlet或者JSP中通过如下方式获取数据
+ *  String myData = (String) getServletContext().getAttribute("myData");
+ *
  * @author Juergen Hoeller
  * @author Chris Beams
  * @since 17.02.2003
@@ -98,9 +143,12 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 	/**
 	 * Initialize the root web application context.
 	 * 初始化根web应用程序上下文。
+	 * ServletContext 启动之后会调用 ServletContextListener 的 contextInitialized 方法，那么，我
+	 * 们就从这个函数开始进行分析。
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
+		//初始化WebApplicationContext
 		initWebApplicationContext(event.getServletContext());
 	}
 

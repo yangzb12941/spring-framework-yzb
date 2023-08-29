@@ -150,6 +150,74 @@ import org.springframework.web.util.WebUtils;
  * 3.0+ environments, which support programmatic registration of servlet instances.
  * See the {@link #DispatcherServlet(WebApplicationContext)} javadoc for details.
  *
+ * 在 Spring 中， ContextLoaderListener 只是辅助功能，用于创建 WebApplicationContext 类型
+ * 实例 ， 而真正的逻辑实现其实是在 DispatcherServlet 中进行的， DispatcherServlet 是实现 servlet
+ * 接口的实现类。 servlet 是一个 Java 编写的程序，此程序是基于 HTTP 协议的，在服务器端运行的（如 Tomcat ),
+ * 是按照 servlet 规范编写的一个 Java 类。 主要是处理客户端的请求并将其结果发送到客户端。 servlet 的生命周期是由
+ * servlet 的容器来控制的，它可以分为 3 个阶段：初始化、运行和销毁。
+ * 1. 初始化阶段
+ * A、servlet 容器加载 servlet 类，把 servlet 类的 .class 文件中的数据读到内存中。
+ * B、servlet 容器创建一个 ServletConfig 对象。 ServletConfig 对象包含了 servlet 的初始化配配置信息。
+ * C、servlet 容器创建一个 servlet 对象。 servlet 容器调用 servlet 对象的 init 方法进行初始化。
+ *
+ * 2. 运行阶段
+ * 当 servlet 容器接收到一个请求时， servlet 容器会针对这个请求创建 servletRequest 和servletResponse 对象，
+ * 然后调用 service 方法。 并把这两个参数传递给 service 方法。 service 方法通过 servletRequest 对象获得请求的信息。
+ * 并处理该请求。 再通过 servletResponse 对象生成这个请求的响应结果。 然后销毁 servletRequest 和 servletResponse 对象。
+ * 我们不管这个请求是 post 提交的还是 get 提交的，最终这个请求都会由 service 方法来处理。
+ *
+ * 3 . 销毁阶段
+ * 当 Web  应用被终止时 ， servlet 容器会先调用 servlet对象的 destroy 方法，然后再销毁 servlet 对象，同时也会销毁与 servlet
+ * 对象相关联的 servletConfig 对象。我们可以在 destroy 方法的实现中，释放 servlet 所占用的资源，如关闭数据库连接，关闭文件输入输出流等。
+ * servlet 的框架是由两个 Java 包组成： javax.servlet 和 javax.servlet.http 。 在 javax.servlet 包中定义了所有的 servlet
+ * 类都必须实现或扩展的通用接口和类，在 javax.servlet.http 包中定义了采用 HTTP 通信协议的 HttpServlet 类。 servlet 被设计成请求驱动，
+ * servlet 的请求可能包含多个数据项，当 Web 容器接收到某个 servlet 请求时， servlet 把请求封装成一个 HttpServletRequest 对象，
+ * 然后把对象传给 servlet 的对应的服务方法。 HTTP 的请求方式包括 delete 、 get 、 options 、 post 、 put 和 trace，
+ * 在 HttpServlet 类中分别提供了相应的服务方法，它们是 doDelete()、 doGet() 、 doOptions() 、 doPost() 、 doPut()和 doTrace() 。
+ *
+ *
+ * 1、建立 servlet
+ * HttpServlet 类则会帮助我们根据方法类型的不同而将逻辑引入不同的函数。在子类中我们只需要重写对应的函数逻辑便可，
+ * 如以上代码重写了 doGet 和 doPost 方法井将逻辑处理部分引导至 handleLogic 函数中，最后，又将页面跳转至 index.jsp。
+ *
+ * public class MyServlet extends HttpServlet{
+ *     public void init(){
+ *         System.out.println("this is init method");
+ *     }
+ *
+ *     public void doGet(HttpServletRequest request , HttpServletResponse response){
+ *         handleLogic(request,response);
+ *     }
+ *     public void doPost(HttpServletRequest request , HttpServletResponse response){
+ *         handleLogic(request,response);
+ *     }
+ *
+ *     private void handleLogic(HttpServletRequest request , HttpServletResponse response){
+ *         System.out.println("handleLogic method");
+ *         ServletContext sc = getServletContext();
+ *         RequestDispatcher rd = null ;
+ *
+ *         rd = sc.getRequestDispatcher("/index.jsp"); //定向的页面
+ *         try{
+ *             rd.forward(request,response);
+ *         }catch (Servlet Exception | IOException e){
+ *            e.printStackTrace();
+ *         }
+ *     }
+ * }
+ * 2. 添加配置
+ * 为了使 servlet 能够正常使用， 需要在 web.xml 文件中添加以下配置 ：
+ * 配置后便可以根据对应的配置访问相应的路径了。
+ * <servlet>
+ *   <servlet-name>myservlet</servlet-name>
+ *   <servlet-class>test.servlet.MyServlet</servlet-class>
+ *   <load-on-startup>1</ load-on-startup>
+ * </servlet>
+ * <servlet-mapping>
+ *     <servlet-name>myservlet</servlet-name>
+ *     <url-pattern>*.htm</url-pattern>
+ * </servlet-mapping>
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Rob Harrop
@@ -489,6 +557,8 @@ public class DispatcherServlet extends FrameworkServlet {
 
 	/**
 	 * This implementation calls {@link #initStrategies}.
+	 * onRefresh 是 FrameworkServlet 类中提供的模板方法，在其子类 DispatcherServlet
+	 * 中进行了重写，主要用于刷新 Spring 在 Web 功能实现中所必须使用的全局变量。
 	 */
 	@Override
 	protected void onRefresh(ApplicationContext context) {
@@ -500,6 +570,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
+		// (1 ）初始化MultipartResolver
 		initMultipartResolver(context);
 		initLocaleResolver(context);
 		initThemeResolver(context);
@@ -515,6 +586,24 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the MultipartResolver used by this class.
 	 * <p>If no bean is defined with the given name in the BeanFactory for this namespace,
 	 * no multipart handling is provided.
+	 *
+	 * 在 Spring 中， MultipartResolver 主要用来处理文件上传。 默认情况下， Spring 是没有 multipart
+	 * 处理的，因为一些开发者想要自己处理它们。 如果想使用 Spring 的 multipart ， 则需要在 Web 应用的上下文中添加
+	 * multipart 解析器。 这样，每个请求就会被检查是否包含 multipart。 然而， 如果请求中包含 multipart，那么上下文中定义的
+	 * MultipartResolver 就会解析它，这样请求中的 multipart 属性就会像其他属性一样被处理。 常用配置如下 ：
+	 * <bean id＝ ”multipartResolver ” class＝ ”org.Springframework.web.multipart.commons.CommonsMultipartResolver">
+	 *     <! -- 该属性用来配置可上传文件的最大字节数-->
+	 *     <property name= "maximumFileSize">
+	 *       <value>1OOOOO</value>
+	 *     </property>
+	 * </bean>
+	 * CommonsMultipartResolver 还提供了其他功能用于帮助用户完成上传功能，有兴趣
+	 * 的读者可以进一步查看。 那么 MultipartResolver 就是在 initMultipartResolver
+	 * 中被加入到 DispatcherServlet 中的。
+	 *
+	 * 因为之前的步骤已经完成了 Spring 中配置文件的解析，所以在这里只要在配置文件注册过
+	 * 都可以通过 ApplicationContext 提供的 getBean 方法来直接获取对应 bean ，进而
+	 * 初始化 MultipartResolver 中的 multipartResolver 变量。
 	 */
 	private void initMultipartResolver(ApplicationContext context) {
 		try {
@@ -539,6 +628,23 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the LocaleResolver used by this class.
 	 * <p>If no bean is defined with the given name in the BeanFactory for this namespace,
 	 * we default to AcceptHeaderLocaleResolver.
+	 * 在 Spring 的国际化配置中一共有 3 种使用方式。
+	 * 1、基于 URL 参数的配置。
+	 *    通过 URL 参数来控制国际化， 比如你在页面上加一句<a href=”?locale=zh_CN”></a>简体中文
+	 * 来控制项目中使用的国际化参数。 而提供这个功能的就是 AcceptHeaderLocaleResolver，默认的参数名为 locale，
+	 * 注意大小写。 里面放的就是你的提交参数，比如 en_US, zh_CN 之类的 ， 具体配置如下；
+	 * <bean id=”localeResolver” class=”org.Springframework.web.servlet.il8n.AcceptHeaderLocaleResolver”/>
+	 * 2、基于 session 的配置。
+	 *  它通过检验用户会话中预置的属性来解析区域。 最常用的是根据用户本次会话过程中的语言设定决定语言种类
+	 *  （例如，用户登录时选择语言种类，则此次登录周期内统一使用此语言设定），如果该会话属性不存在，它会根据 accept-language HTTP 头部确定默认区域。
+	 *  <bean id=”localeResolver” class=”org.Springframework.web.servlet.il8n.SessionLocaleResolver”/>
+	 * 3、基于 cookie 的国际化配置。
+	 *  CookieLocaleResolver 用于通过浏览器的 cookie 设置取得 Locale 对象。 这种策略在应用程
+	 *  序不支持会话或者状态必须保存在客户端时有用，配置如下 ：
+	 *  <bean id=”localeResolver" class＝”org.Springframework.web.servlet.i18n.CookieLocaleResolver”/>
+	 *
+	 *  这 3 种方式都可以解决国际化的问题。但是，对于 LocalResolver 的使用基础是在 DispatcherServlet 中的初始化。
+	 *  提取配置文件中设置的 LocaleResolver 来初始化 DispatcherServlet 中的 localeResolver属性。
 	 */
 	private void initLocaleResolver(ApplicationContext context) {
 		try {
@@ -564,6 +670,57 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the ThemeResolver used by this class.
 	 * <p>If no bean is defined with the given name in the BeanFactory for this namespace,
 	 * we default to a FixedThemeResolver.
+	 *
+	 * 初始化 ThemeResolver。
+	 * 在 Web 开发中经常会遇到通过主题 Theme 来控制网页风格，这将进一步改善用户体验。
+	 * 简单地说， 一个主题就是一组静态资源（ 比如样式表和图片 ） ， 它们可以影响应用程序的视觉效果。
+	 * Spring 中的主题功能和国际化功能非常类似。 Spring 主题功能的构成主要包括如下内容。
+	 * 1、主题资源 。
+	 * org.Springframework.ui.context.ThemeSource 是 Spring 中主题资源的接口 ， Spring 的主题需
+	 * 要通过 ThemeSource 接口来实现存放主题信息的资源。
+	 * org.Springframework.ui.context.support.ResourceBundleThemeSource 是 ThemeSource 接口默
+	 * 认实现类 （也就是通过 ResourceBundle 资源的方式定义主题）， 在 Spring 中的配置如下 ：
+	 * <bean id= ”themeSource” class＝ ”org.Springframework.ui.context.support.ResourceBundleThemeSource” >
+	 *     <property name= ” basenamePrefix " value= ”com.test.”></property>
+	 * </bean>
+	 * 默认状态下是在类路径根目录下查找相应的资源文件，也可以通过 basenamePrefix 来制定。
+	 * 这样， DispatcherServlet 就会在 com.test 包下查找资源文件。
+	 *
+	 * 2、主题解析器。
+	 * ThemeSource 定义了一些主题资源，那么不同的用户使用什么主题资源由谁定义呢？
+	 * org.Springframework.web.servlet.ThemeResolver 是主题解析器的接口 ，
+	 * 主题解析的工作便由它的 子类来完成。 对于主题解析器的子类主要有 3 个比较常用的实现。
+	 * 以主题文件 summer.properties 为例。
+	 * ① FixedThemeResolver 用于选择一个固定的主题。
+	 *  <bean id＝”themeResolver" class＝”org.Springframework.web.servlet.theme.FixedThemeResolver”>
+	 *      <property name= ”defaultThemeName” value= "summer” />
+	 *  </bean>
+	 * 以上配置的作用是设置主题文件为 summer.properties ，在整个项目内固定不变。
+	 *
+	 * ② CookieThemeResolver 用于实现用户所选的主题， 以 cookie 的形式存放在客户端的机器上，配置如下：
+	 * <bean id＝”themeResolver” class＝”org.Springframework.web.servlet.theme.CookieThemeResolver”>
+	 *   <property name=”defaultThemeName” value= ”summer"/>
+	 * </bean>
+	 *
+	 * ③ SessionThemeResolver 用于主题保存在用户的 HTTP Session 中。
+	 * <bean id＝”themeResolver” class＝”org.Springframework.web.servlet.theme.SessionThemeResolver” >
+	 *     <property name= ” defaultThemeName ” value=” summer ” />
+	 * </bean>
+	 * 以上配置用于设置主题名称，并且将该名称保存在用户的 HttpSession 中。
+	 *
+	 * ④ AbstractThemeResolver 是一个抽象类被 SessionThemeResolver 和 FixedThemeResolver 继承，用户也可以继承它来自定义主题解析器。
+	 * A、拦截器。
+	 *  如果需要根据用户请求来改变主题， 那么 Spring 提供了一个已经实现的拦截器 ThemeChangeInterceptor 拦截器了，配置如下：
+	 *  <bean id=”themeChangeInterceptor” class=” org.Springframework.web.servlet.theme.ThemeChangeInterceptor">
+	 *      <property name =”paramName” value=”themeName"></property>
+	 *  </bean> 其中设置用户请求参数名为 themeName，即 URL 为？themeName＝具体的主题名称。
+	 *  此外，还需要在 handlerMapping 中配置拦截器。 当然需要在 HandleMapping 中添加拦截器。
+	 *  <property name=”interceptors” >
+	 *    <list>
+	 *      <ref local= ”themeChangeInterceptor"/>
+	 *    </list>
+	 *   </property>
+	 * 了解了主题文件的简单使用方式后，再来查看解析器的初始化工作，与其他变量的初始化工作相同， 主题文件解析器的初始化工作并没有任何需要特别说明的地方。
 	 */
 	private void initThemeResolver(ApplicationContext context) {
 		try {
@@ -589,6 +746,28 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the HandlerMappings used by this class.
 	 * <p>If no HandlerMapping beans are defined in the BeanFactory for this namespace,
 	 * we default to BeanNameUrlHandlerMapping.
+	 *
+	 * 4 初始化 HandlerMappings。
+	 * 当客户端发出 Request 时 DispatcherServlet 会将 Request 提交给 HandlerMapping ， 然后
+	 * HandlerMapping 根据 WebApplicationContext 的配置来回传给 DispatcherServlet 相应的 Controller。
+	 * 在基于 SpringMVC 的 Web 应用程序中，我们可以为 DispatcherServlet 提供多个 HandlerMapping 供其使用。
+	 * DispatcherServlet 在选用 HandlerMapping 的过程中，将根据我们所指定的一系列 HandlerMapping 的优先级进行排序，
+	 * 然后优先使用优先级在前的 HandlerMapping。 如果当前的 HandlerMapping能够返回可用的 Handler, DispatcherServlet则使用
+	 * 当前返回的 Handler 进行 Web 请求的处理，而不再继续询问其他的 HandierMapping。
+	 * 否则， DispatcherServlet 将继续按照各个 HandlerMapping 的优先级进行询问，直到获取一个可用的 Handler 为止。 初始化配 置如下：
+	 *
+	 * 默认情况下， SpringMVC 将加载当前系统中所有实现了 HandlerMapping 接口的 bean。 如果只期望 SpringMVC
+	 * 加载指定的 handlerMapping 时，可以修改 web.xml 中的 DispatcherServlet 的初始参数 ， 将 detectAllHandlerMappings
+	 * 的值设置为 false :
+	 * <init-param>
+	 *     <param-name>detectAllHandlerMappings</param-name>
+	 *     <param-value>false</param-value>
+	 * </init-param>
+	 * 此时， SpringMVC 将查找名为“handlerMapping”的 bean ，并作为当前系统中唯一的handlerMapping。
+	 * 如果没有定义 handlerMapping 的话，则 SpringMVC 将按照 org.Springframework.web.servlet.DispatcherServlet
+	 * 所在目录下的DispatcherServlet.properties 中所定义的org.Springframework.web.servlet.HandlerMapping
+	 * 的内容来加载默认的 handlerMapping （用户没有自定义 Strategies 的情况下）。
+	 *
 	 */
 	private void initHandlerMappings(ApplicationContext context) {
 		this.handlerMappings = null;
@@ -628,6 +807,12 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the HandlerAdapters used by this class.
 	 * <p>If no HandlerAdapter beans are defined in the BeanFactory for this namespace,
 	 * we default to SimpleControllerHandlerAdapter.
+	 *
+	 * 5 . 初始化 HandlerAdapters。 从名字也能联想到这是一个典型的适配器模式的使用，在计算机编程中，
+	 * 适配器模式将一个类的接口适配成用户所期待的。 使用适配器，可以使接口不兼容而无法在一起工作的类协同工作，
+	 * 做法是将类自己的接口包裹在一个己存在的类中。 那么在处理 handler 时为什么会使用适配器模式呢？
+	 * 回答这个问题我们首先要分析它的初始化逻辑。
+	 *
 	 */
 	private void initHandlerAdapters(ApplicationContext context) {
 		this.handlerAdapters = null;
