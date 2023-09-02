@@ -1043,11 +1043,27 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	/**
 	 * Process this request, publishing an event regardless of the outcome.
 	 * <p>The actual event handling is performed by the abstract
+	 *
+	 * 我们知道在 HttpServlet 类中分别提供了相应的服务方法，它们是
+	 * doDelete() 、 doGet() 、 doOptions() 、 doPost() 、 doPut()和 doTrace()，
+	 * 它会根据请求的不同形式将程序引导至对应的函数进行处理。
+	 * 这几个函数中最常用的函数无非就是 doGet()和 doPost()，
+	 * 那么我们就直接查看 DispatcherServlet 中对于这两个函数的逻辑实现。
+	 *
+	 * 函数中已经开始了对请求的处理， 虽然把细节转移到了 doService 函数中实现，
+	 * 但是我们不难看出处理请求前后所做的准备与处理工作。
+	 * 1. 为了保证当前线程的 LocaleContext 以及 RequestAttributes 可以在当前请求后还能恢复，提取当前线程的两个属性。
+	 * 2. 根据当前 request 创建对应的 LocaleContext 和 RequestAttributes，并绑定到当前线程。
+	 * 3. 委托给 doService 方法进一步处理。
+	 * 4. 请求处理结束后恢复线程到原始状态。
+	 * 5. 请求处理结束后无论成功与否发布事件通知。
+	 *
 	 * {@link #doService} template method.
 	 */
 	protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		// 记录当前时间，用于计算 web 请求的处理时间。
 		long startTime = System.currentTimeMillis();
 		Throwable failureCause = null;
 

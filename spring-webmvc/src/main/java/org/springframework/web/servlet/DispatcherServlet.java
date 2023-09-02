@@ -1206,6 +1206,13 @@ public class DispatcherServlet extends FrameworkServlet {
 	/**
 	 * Exposes the DispatcherServlet-specific request attributes and delegates to {@link #doDispatch}
 	 * for the actual dispatching.
+	 *
+	 * 我们猜想对请求处理至少应该包括一些诸如寻找 Handler 并页面跳转之类的逻辑处理，
+	 * 但是，在 doService 中我们并没有看到想看到的逻辑，相反却同样是一些准备工作，但是这些准备工作却是必不可少的。
+	 *
+	 * Spring 将已经初始化的功能辅助工具变量，比如 localeResolver , themeResolver 等设置在 request 属性中，
+	 * 而这些属性会在接下来的处理中派上用场。 经过层层的准备工作， 终于在 doDispatch 函数中看到了完整的请求处理过程。
+	 *
 	 */
 	@Override
 	protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -1310,20 +1317,25 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//如果是 MultipartContent 类型的 request 则转换 request 为 MultipartHttpServletRequest 类型的 request
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				// 根据 request 信息寻找对应的 Handler
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
+					//如果没有找到对应的 handler 则通过 response 反馈错误信息
 					noHandlerFound(processedRequest, response);
 					return;
 				}
 
 				// Determine handler adapter for the current request.
+				// 根据当前的 handler 寻找对应的 HandlerAdapter
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
+				// 如果当前 handler 支持 last-modified 头处理
 				String method = request.getMethod();
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
@@ -1332,19 +1344,21 @@ public class DispatcherServlet extends FrameworkServlet {
 						return;
 					}
 				}
-
+				//拦截器的 preHandler 方法的调用
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
 				// Actually invoke the handler.
+				// 真正的激活 handler 并返回视图
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
-
+                // 视图名称转换应用于需要添加前缀后缀的情况
 				applyDefaultViewName(processedRequest, mv);
+				// 应用所有拦截器的 postHandle 方法
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -1355,12 +1369,14 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			// 如果在 Handler 实例的处理中返回了 view，那么需要做页面的处理
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
 			triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
 		}
 		catch (Throwable err) {
+			//完成处理激活触发器
 			triggerAfterCompletion(processedRequest, response, mappedHandler,
 					new NestedServletException("Handler processing failed", err));
 		}
@@ -1416,6 +1432,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Did the handler return a view to render?
 		if (mv != null && !mv.wasCleared()) {
+			// 处理页面跳转
 			render(mv, request, response);
 			if (errorView) {
 				WebUtils.clearErrorRequestAttributes(request);
