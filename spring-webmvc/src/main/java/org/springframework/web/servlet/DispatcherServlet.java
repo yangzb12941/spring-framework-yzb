@@ -352,6 +352,32 @@ public class DispatcherServlet extends FrameworkServlet {
 		// Load default strategy implementations from properties file.
 		// This is currently strictly internal and not meant to be customized
 		// by application developers.
+		// 从属性文件加载默认策略实现。这目前是严格的内部，不意味着应用程序开发人员可以自定义。
+		// 在系统加载的时候， defaultStrategies 根据目前路径 DispatcherServlet.properties 来初始化本
+		// 身，查看 DispatcherServlet.properties 中对应 HandlerAdapter 的属性：
+		// org.Springframework.web.servlet.HandlerAdapter=org.Springframework.web.servlet .mvc.HttpRequestHandlerAdapter, \
+		// org Springframework.web.servlet.mvc.SimpleControllerHandlerAdapter,\
+		// org Springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter
+
+		// 作为总控制器的派遣器 servlet 通过处理器映射得到处理器后，会轮询处理器适配器模块，
+		// 查找能够处理当前 HTTP 请求的处理器适配器的实现，处理器适配器模块根据处理器映射返回
+		// 的处理器类型，例如简单的控制器类型 、注解控制器类型或者远程调用处理器类型，来选择某
+		// 一个适当的处理器适配器的实现，从而适配当前的 HTTP请求。
+
+		// 1、HTTP 请求处理器适配器(HttpRequestHandlerAdapter)
+		//   HTTP 请求处理器适配器仅仅支持对 HTTP 请求处理的适配。它简单地将请求对象和响应对象
+		//   传递给 HTTP 请求处理器的实现，它并不需要返回值，它主要应用在基于 HTTP的远程调用的实现上。
+
+		// 2、简单控制器处理器适配器(SimpleControllerHandlerAdapter)
+		//   这个实现类将 HTTP 请求适配到一个控制器的实现进行处理。这里控制器的现是一个简
+		//   单的控制器接口的实现。简单控制器处理器适配器被设计成一个框架类的实现 ，不需要被改写，
+		//   客户化的业务逻辑通常是在控制器接口的实现类中现的。
+
+		// 3、注解方法处理器适配器(AnnotationMethodHandlerAdapter)
+		//   这个类的现是注解的实现，它需要结合注解方法映射和注解方法处理器协同工作。
+		//   它通过解析声明在注解控制器的请求映射信息来解析相应的处理器方法来处理当前的 HTTP请求。
+		//   在处理的过程中，它通过反射来发现探测处理器方法的参数，调用处理器方法，并且映射
+		//   返回值到模型和控制器对象，最后返回模型和控制器对象给作为主控制器的派遣器 Servlet。
 		try {
 			ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, DispatcherServlet.class);
 			defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
@@ -829,6 +855,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		if (this.detectAllHandlerAdapters) {
 			// Find all HandlerAdapters in the ApplicationContext, including ancestor contexts.
+			// 在ApplicationContext中查找所有HandlerAdapter，包括祖先上下文。
 			Map<String, HandlerAdapter> matchingBeans =
 					BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerAdapter.class, true, false);
 			if (!matchingBeans.isEmpty()) {
@@ -894,11 +921,13 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		if (this.detectAllHandlerExceptionResolvers) {
 			// Find all HandlerExceptionResolvers in the ApplicationContext, including ancestor contexts.
+			// 在ApplicationContext中查找所有HandlerExceptionResolver，包括祖先上下文。
 			Map<String, HandlerExceptionResolver> matchingBeans = BeanFactoryUtils
 					.beansOfTypeIncludingAncestors(context, HandlerExceptionResolver.class, true, false);
 			if (!matchingBeans.isEmpty()) {
 				this.handlerExceptionResolvers = new ArrayList<>(matchingBeans.values());
 				// We keep HandlerExceptionResolvers in sorted order.
+				// 我们将 HandlerExceptionResolver 按排序。
 				AnnotationAwareOrderComparator.sort(this.handlerExceptionResolvers);
 			}
 		}
@@ -910,11 +939,13 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 			catch (NoSuchBeanDefinitionException ex) {
 				// Ignore, no HandlerExceptionResolver is fine too.
+				// 忽略，没有HandlerExceptionResolver也可以。
 			}
 		}
 
 		// Ensure we have at least some HandlerExceptionResolvers, by registering
 		// default HandlerExceptionResolvers if no other resolvers are found.
+		// 如果找不到其他解析程序，请注册默认的HandlerExceptionResolver，确保我们至少有一些HandlerException解析程序。
 		if (this.handlerExceptionResolvers == null) {
 			this.handlerExceptionResolvers = getDefaultStrategies(context, HandlerExceptionResolver.class);
 			if (logger.isTraceEnabled()) {
@@ -1023,6 +1054,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Ensure we have at least one ViewResolver, by registering
 		// a default ViewResolver if no other resolvers are found.
+		// 如果找不到其他解析器，请注册默认的ViewResolver，确保我们至少有一个ViewResolver。
 		if (this.viewResolvers == null) {
 			this.viewResolvers = getDefaultStrategies(context, ViewResolver.class);
 			if (logger.isTraceEnabled()) {
@@ -1373,6 +1405,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
+			// 完成处理激活触发器
 			triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
 		}
 		catch (Throwable err) {
@@ -1476,6 +1509,10 @@ public class DispatcherServlet extends FrameworkServlet {
 	/**
 	 * Convert the request into a multipart request, and make multipart resolver available.
 	 * <p>If no multipart resolver is set, simply use the existing request.
+	 *
+	 * 对于请求的处理， Spring 首先考虑的是对于 Multipart 的处理如果是 MultipartContentRequest ，
+	 * 则转换 request 为 MultipartHttpServletRequest 类型的 request
+	 *
 	 * @param request current HTTP request
 	 * @return the processed request (multipart wrapper if necessary)
 	 * @see MultipartResolver#resolveMultipart
@@ -1542,6 +1579,19 @@ public class DispatcherServlet extends FrameworkServlet {
 	/**
 	 * Return the HandlerExecutionChain for this request.
 	 * <p>Tries all handler mappings in order.
+	 *
+	 * <bean id= simpleUrlMapping class ="org.Springframework.web.servlet.handler.SimpleUrlHandlerMapping”>
+	 *    <property name=” mappings” >
+	 *      <props>
+	 *        <prop key=”/userlist.htm” >userController</prop>
+	 *      </props>
+	 *    </property>
+	 * </bean>
+	 *
+	 * Spring 加载的过程中， Spring 会将类型为 SimpleUrlHandlerMapping 的实例加载到
+	 * this.handlerMappings中，按照常理推断 ，根据 request 提取对应的 Handler ，无非就是提取当
+	 * 实例中 userController ，但是 userController 为继承自 AbstractController 类型实例，
+	 * 与 HandlerExecutionChain 并无任何 联，那么这 步是如何封装的呢
 	 * @param request current HTTP request
 	 * @return the HandlerExecutionChain, or {@code null} if no handler could be found
 	 */
@@ -1560,6 +1610,12 @@ public class DispatcherServlet extends FrameworkServlet {
 
 	/**
 	 * No handler found -> set appropriate HTTP response status.
+	 *
+	 * 每个请求都应该对应着－个 Handler ，因为每个请求都会在后台有相应的逻辑对应，而逻辑的
+	 * 现就是在 Handler 中，所以一旦遇到没有找到 Handler 情况（正常情况下如果没有 URL
+	 * 匹配的 Handler ，开发人员可以设置默认的 Handler 处理请求，但是如果默认请求也未设置就
+	 * 会出现 Handler为空的情况），就只能通过 response 向用户返回错误信息
+	 *
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @throws Exception if preparing the response failed
@@ -1579,12 +1635,20 @@ public class DispatcherServlet extends FrameworkServlet {
 
 	/**
 	 * Return the HandlerAdapter for this handler object.
+	 *
+	 * WebApplicationContext 的初始 过程中我们讨论了 HandlerAdapters 的初始化，了解了
+	 * 在默认情况下普通的 Web 请求会交给 SimpleControllerHandlerAdapter 去处理。下面我们以
+	 * SimpleControllerHandlerAdapter 为例来分析获取适配器的逻辑
+	 *
 	 * @param handler the handler object to find an adapter for
 	 * @throws ServletException if no HandlerAdapter can be found for the handler. This is a fatal error.
 	 */
 	protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
 		if (this.handlerAdapters != null) {
 			for (HandlerAdapter adapter : this.handlerAdapters) {
+				// 通过上面的函数我们了解到，对于获取适配器的逻辑无非就是遍历所有适配器来选择合适
+				// 的适配器并返回它，而某个适配器是否适用于当前的 Handler 逻辑被封装在具体的适配器中
+				// 进一步查看 SimpleControllerHandlerAdapter 中的 supports 方法。
 				if (adapter.supports(handler)) {
 					return adapter;
 				}

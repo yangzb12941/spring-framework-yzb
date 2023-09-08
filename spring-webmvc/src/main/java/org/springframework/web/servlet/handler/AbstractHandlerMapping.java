@@ -383,6 +383,11 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	/**
 	 * Look up a handler for the given request, falling back to the default
 	 * handler if no specific one is found.
+	 *
+	 * 在之前的内容我们提过， 系统启动时 Spring 会将所有的映射类型的 bean 注册到
+	 * this.handlerMappings 变量中，所以此函数的目的就是把所有的 HandlerMapping 调用
+	 * getHandler 方法进行封装处理 SimpleUrlHandlerMapping 为例查看其 getHandler 如下：
+	 *
 	 * @param request current HTTP request
 	 * @return the corresponding handler instance, or the default handler
 	 * @see #getHandlerInternal
@@ -390,10 +395,19 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	@Override
 	@Nullable
 	public final HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+		//1、根据 request 获取对应的 handler
+		//函数中会使 getHandlerExecutionChain 方法根据 request 信息获取对对应的Handler ，如果
+		//SimpleUrlHandlerMapping 为例分析，那么我们推断此步骤提供的功能很可能就是根据URL找
+		//到匹配的 Controller 返回， 当然如果没有找到对 Controller 处理器，那么程序会尝试去查找
+		//配置中的默认处理器。当然，当查找 Controller为String类型时，那就意味着返回的是配置
+		//bean 名称， 需要根据 bean名称找对应的 bean 后，还要通过 getHandlerExecutionChain方
+		//法对返回的 Handler 行封装 以保证满足返回类型的匹配。
 		Object handler = getHandlerInternal(request);
 		if (handler == null) {
+			// 果没有对应 request 的 handler，则使用默认的 handler
 			handler = getDefaultHandler();
 		}
+		// 如果 没有提供默认的 handler 无法继续处理返回 null
 		if (handler == null) {
 			return null;
 		}
@@ -402,7 +416,9 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 			String handlerName = (String) handler;
 			handler = obtainApplicationContext().getBean(handlerName);
 		}
-
+		//2. 加入拦截器到执行链
+		// getHandlerExecutionChain 函数最主要的目的是将配置中的对应拦截器加入到执行链中，
+		//以保证这些拦截器可 有效地作用于目标对象。
 		HandlerExecutionChain executionChain = getHandlerExecutionChain(handler, request);
 
 		if (logger.isTraceEnabled()) {
@@ -442,6 +458,8 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	protected abstract Object getHandlerInternal(HttpServletRequest request) throws Exception;
 
 	/**
+	 * 1、根据 request 查找对应的 Handler
+	 *
 	 * Build a {@link HandlerExecutionChain} for the given handler, including
 	 * applicable interceptors.
 	 * <p>The default implementation builds a standard {@link HandlerExecutionChain}
@@ -464,7 +482,7 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpServletRequest request) {
 		HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
 				(HandlerExecutionChain) handler : new HandlerExecutionChain(handler));
-
+		// 截取用于匹配的 url 有效路径
 		String lookupPath = this.urlPathHelper.getLookupPathForRequest(request, LOOKUP_PATH);
 		for (HandlerInterceptor interceptor : this.adaptedInterceptors) {
 			if (interceptor instanceof MappedInterceptor) {

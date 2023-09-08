@@ -63,6 +63,19 @@ import org.springframework.web.method.HandlerMethod;
  * forms and GZIP compression. This typically shows when one needs to map the
  * filter to certain content types (e.g. images), or to all requests.
  *
+ * Servlet API 定义的 servlet 滤器可以在 servlet 处理每个 Web 请求的前后分别对它进行前置
+ * 处理和后置处理。 此外，有些时候，你可能只想处理某些 SpringMVC 处理程序处理的 Web
+ * 请求，并在这些处理程序返回的模型属性被传递到视图之前，对它们进行一些操。
+ * SpringMVC 允许你通过处理拦截 Web 请求，进行前置处理和后置处理。处理拦截是在
+ *
+ * Spring 的 Web 应用程序上下文中配置的，因此它们可以利用各种容器特性 ，并引用容器中声明
+ * 的任何 bean。处理拦截是针对特殊的处理程序映射进行注册的，因此它只拦截通过这些处理程序
+ * 映射的请求。每个处理拦截都必须实现 HandlerInterceptor接口，它 包含三个需要你现的回
+ * 调方法： preHandle（） 、postHandle（）和 afterCompletion（） 。第一个和第二个方分别
+ * 是在程序处理请求之前和之后被调用的。第二个方法还允许访问返回 ModelAndView 对象，因此可
+ * 以在它里面操作模型属。 最后一个方法是在所有请求处理完成之后被调用（如视图 呈现现之后），
+ * 以下是 HandlerInterceptor 的简单实现：
+ *
  * @author Juergen Hoeller
  * @since 20.06.2003
  * @see HandlerExecutionChain#getInterceptors
