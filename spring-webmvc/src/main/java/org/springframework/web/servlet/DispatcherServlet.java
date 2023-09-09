@@ -1632,6 +1632,10 @@ public class DispatcherServlet extends FrameworkServlet {
 	/**
 	 * Render the given ModelAndView.
 	 * <p>This is the last stage in handling a request. It may involve resolving the view by name.
+	 * 1、解析视图名称
+	 * DispatcherServlet会根据 Mode!AndView选择合适的视图来进行渲染，
+	 * 而这一功能 就是在 resolveViewName 函数 中完成的 。
+	 *
 	 * @param mv the ModelAndView to render
 	 * @param request current HTTP servlet request
 	 * @param response current HTTP servlet response
@@ -1648,6 +1652,9 @@ public class DispatcherServlet extends FrameworkServlet {
 		String viewName = mv.getViewName();
 		if (viewName != null) {
 			// We need to resolve the view name.
+			//	 * 1、解析视图名称
+			//	 * DispatcherServlet会根据 ModelAndView选择合适的视图来进行渲染，
+			//	 * 而这一功能 就是在 resolveViewName 函数 中完成的 。
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
 			if (view == null) {
 				throw new ServletException("Could not resolve view with name '" + mv.getViewName() +
@@ -1671,6 +1678,8 @@ public class DispatcherServlet extends FrameworkServlet {
 			if (mv.getStatus() != null) {
 				response.setStatus(mv.getStatus().value());
 			}
+			// 2. 页面跳转
+			// 当通过 viewName 解析到对应的 View后，就可以进一步地处理跳转逻辑了。
 			view.render(mv.getModelInternal(), request, response);
 		}
 		catch (Exception ex) {
@@ -1697,6 +1706,11 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>The default implementations asks all ViewResolvers of this dispatcher.
 	 * Can be overridden for custom resolution strategies, potentially based on
 	 * specific model attributes or request parameters.
+	 *
+	 * org.Springframework.web.servlet川ew.InternalResourceViewResolver 为例来分析
+	 * ViewResolver 逻辑的解析过程， 其中 resolveViewName 函数的实现是在其父类
+	 * AbstractCachingViewResolver 中完成的。
+	 *
 	 * @param viewName the name of the view to resolve
 	 * @param model the model to be passed to the view
 	 * @param locale the current locale

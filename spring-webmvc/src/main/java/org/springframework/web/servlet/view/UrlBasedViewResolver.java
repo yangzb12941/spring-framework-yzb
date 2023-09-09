@@ -468,11 +468,14 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	protected View createView(String viewName, Locale locale) throws Exception {
 		// If this resolver is not supposed to handle the given view,
 		// return null to pass on to the next resolver in the chain.
+		//如果这个解析器不应该处理给定的视图，那么返回null以传递给链中的下一个解析器。
+		//如果当前解析器不支持当前解析器如 viewName 为空等情况
 		if (!canHandle(viewName, locale)) {
 			return null;
 		}
 
 		// Check for special "redirect:" prefix.
+		// 处理前缀为 redirect : xx 的情况
 		if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
 			String redirectUrl = viewName.substring(REDIRECT_URL_PREFIX.length());
 			RedirectView view = new RedirectView(redirectUrl,
@@ -485,6 +488,7 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 		}
 
 		// Check for special "forward:" prefix.
+		//处理前缀为 forward: xx 的情况
 		if (viewName.startsWith(FORWARD_URL_PREFIX)) {
 			String forwardUrl = viewName.substring(FORWARD_URL_PREFIX.length());
 			InternalResourceView view = new InternalResourceView(forwardUrl);
@@ -541,6 +545,12 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	 * <p>Subclasses will typically call {@code super.buildView(viewName)}
 	 * first, before setting further properties themselves. {@code loadView}
 	 * will then apply Spring lifecycle methods at the end of this process.
+	 *
+	 * InternalResourceViewResolver 所提供的解析功能主要考虑到了几个方面的处理 。
+	 * 基于效率的考虑，提供了缓存的支持 。
+	 * 提供了对 redirect:xx 和 forward:xx 前缀的支持 。
+	 * 添加了前缀及后 缀 ，并向 View 中加入了必 需 的属性设设置。
+	 *
 	 * @param viewName the name of the view to build
 	 * @return the View instance
 	 * @throws Exception if the view couldn't be resolved
@@ -551,6 +561,7 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 		Assert.state(viewClass != null, "No view class");
 
 		AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(viewClass);
+		//添加前缀以及后缀
 		view.setUrl(getPrefix() + viewName + getSuffix());
 		view.setAttributesMap(getAttributesMap());
 

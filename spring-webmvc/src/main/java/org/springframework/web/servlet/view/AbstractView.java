@@ -311,7 +311,10 @@ public abstract class AbstractView extends WebApplicationObjectSupport implement
 					", model " + (model != null ? model : Collections.emptyMap()) +
 					(this.staticAttributes.isEmpty() ? "" : ", static attributes " + this.staticAttributes));
 		}
-
+		// 对于 ModelView 的使用，可以将一些属性直接放入其中，然后在页面上直接通过 JSTL语法或者原始的
+		// request获取。 这是一个很方便也很神奇的功能，但是实现却并不复杂，无非是把我们将要用到的属性放入
+		// request 中，以便在其他地方可以直接调用，而解析这些属性的工作就是在
+		// createMergedOutputModel 函数中完成的。
 		Map<String, Object> mergedModel = createMergedOutputModel(model, request, response);
 		prepareResponse(request, response);
 		renderMergedOutputModel(mergedModel, getRequestToExpose(request), response);
@@ -420,6 +423,9 @@ public abstract class AbstractView extends WebApplicationObjectSupport implement
 	 * this would mean setting model objects as request attributes.
 	 * The second step will be the actual rendering of the view,
 	 * for example including the JSP via a RequestDispatcher.
+	 *
+	 * org.springframework.web.servlet.view.InternalResourceView#renderMergedOutputModel(java.util.Map, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 *
 	 * @param model combined output Map (never {@code null}),
 	 * with dynamic values taking precedence over static attributes
 	 * @param request current HTTP request

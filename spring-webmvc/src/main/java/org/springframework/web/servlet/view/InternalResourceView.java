@@ -133,21 +133,27 @@ public class InternalResourceView extends AbstractUrlBasedView {
 	/**
 	 * Render the internal resource given the specified model.
 	 * This includes setting the model as request attributes.
+	 * 处理页面跳转
 	 */
 	@Override
 	protected void renderMergedOutputModel(
 			Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		// Expose the model object as request attributes.
+		// 将模型对象作为请求属性公开。
+		//将 model 中的数据以属性的方式设置到 request 中
 		exposeModelAsRequestAttributes(model, request);
 
 		// Expose helpers as request attributes, if any.
+		// 将帮助程序显示为请求属性（如果有的话）。
 		exposeHelpers(request);
 
 		// Determine the path for the request dispatcher.
+		// 确定请求调度程序的路径。
 		String dispatcherPath = prepareForRendering(request, response);
 
 		// Obtain a RequestDispatcher for the target resource (typically a JSP).
+		// 获取目标资源的RequestDispatcher（通常是JSP）。
 		RequestDispatcher rd = getRequestDispatcher(request, dispatcherPath);
 		if (rd == null) {
 			throw new ServletException("Could not get RequestDispatcher for [" + getUrl() +
@@ -155,6 +161,7 @@ public class InternalResourceView extends AbstractUrlBasedView {
 		}
 
 		// If already included or response already committed, perform include, else forward.
+		//如果已包含或响应已提交，请执行包含，否则执行转发。
 		if (useInclude(request, response)) {
 			response.setContentType(getContentType());
 			if (logger.isDebugEnabled()) {
@@ -165,6 +172,7 @@ public class InternalResourceView extends AbstractUrlBasedView {
 
 		else {
 			// Note: The forwarded resource is supposed to determine the content type itself.
+			// 注意：转发的资源应该自己决定内容类型。
 			if (logger.isDebugEnabled()) {
 				logger.debug("Forwarding to [" + getUrl() + "]");
 			}
