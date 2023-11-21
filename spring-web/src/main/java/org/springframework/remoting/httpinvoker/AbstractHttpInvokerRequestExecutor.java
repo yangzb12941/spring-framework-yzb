@@ -137,6 +137,12 @@ public abstract class AbstractHttpInvokerRequestExecutor implements HttpInvokerR
 			logger.debug("Sending HTTP invoker request for service at [" + config.getServiceUrl() +
 					"], with size " + baos.size());
 		}
+		// 在doExecuteRequest 方法中真正实现了对远程方法的构造与通信，与远程方法的连接功能实现中，
+		// Spring引入了第三方JAR: HttpClient。
+		// HttpClient 是 Apache Jakarta Common 下的子项目，可以用来提供高效的、最新的、功能丰富的支持
+		// HTTP 协议的客户端编程工具包，并且它支持HTTP 协议最新的版本和建议。
+		// 对 HttpClient 的具体使用方法有兴趣的读者可以参考更多的资料和文档。
+		// org.springframework.remoting.httpinvoker.HttpComponentsHttpInvokerRequestExecutor.doExecuteRequest
 		return doExecuteRequest(config, baos);
 	}
 

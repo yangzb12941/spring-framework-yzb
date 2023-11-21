@@ -1660,6 +1660,13 @@ public class DispatcherServlet extends FrameworkServlet {
 
 	/**
 	 * Determine an error ModelAndView via the registered HandlerExceptionResolvers.
+	 *
+	 * 有时候系统运行过程中出现异常，而我们并不希望就此中断对用户的服务，而是至少告知
+	 * 客户当前系统在处理逻辑的过程中出现了异常，甚至告知他们因为什么原因导致的。Spring中
+	 * 的异常处理机制会帮我们完成这个工作。其实，这里 Spring 主要的工作就是将逻辑引导至
+	 * HandlerExceptionResolver 类的 resolveException 方法，而 HandlerExceptionResolver 的使用，我
+	 * 在讲解 WebApplicationContext 的初始化的时－候已经介绍过了
+	 *
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @param handler the executed handler, or {@code null} if none chosen at the time of the exception
@@ -1673,9 +1680,11 @@ public class DispatcherServlet extends FrameworkServlet {
 			@Nullable Object handler, Exception ex) throws Exception {
 
 		// Success and error responses may use different content types
+		// 成功和错误响应可能使用不同的内容类型
 		request.removeAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
 
 		// Check registered HandlerExceptionResolvers...
+		// 检查已注册的HandlerException解析程序。。。
 		ModelAndView exMv = null;
 		if (this.handlerExceptionResolvers != null) {
 			for (HandlerExceptionResolver resolver : this.handlerExceptionResolvers) {
@@ -1729,6 +1738,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		String viewName = mv.getViewName();
 		if (viewName != null) {
 			// We need to resolve the view name.
+			// 解析视图名称，选择合适的视图来渲染。
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
 			if (view == null) {
 				throw new ServletException("Could not resolve view with name '" + mv.getViewName() +

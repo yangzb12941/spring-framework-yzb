@@ -60,6 +60,14 @@ public abstract class RemoteInvocationBasedExporter extends RemoteExporter {
 	 * possibly for applying additional invocation parameters from a
 	 * custom RemoteInvocation subclass. Note that it is preferable to use
 	 * a custom RemoteInvocationExecutor which is a reusable strategy.
+	 *
+	 * 将给定的远程调用应用于给定的目标对象。默认实现委托给RemoteInvocationExecutor。
+	 * 可以在自定义调用行为的子类中重写，可能是为了应用自定义RemoteInvocation子类中的其他调用参数。
+	 * 请注意，最好使用自定义 RemoteInvocationExecutor，这是一种可重复使用的策略。
+	 *
+	 * 而此时 this.RMIExporter 为之前初始化的 RMIServiceExporter, invocation 为包含着需要激
+	 * 活的方法参数，而 wrappedObject 则是之前封装的代理类
+	 *
 	 * @param invocation the remote invocation
 	 * @param targetObject the target object to apply the invocation to
 	 * @return the invocation result
@@ -75,6 +83,7 @@ public abstract class RemoteInvocationBasedExporter extends RemoteExporter {
 			logger.trace("Executing " + invocation);
 		}
 		try {
+			// org.springframework.remoting.support.DefaultRemoteInvocationExecutor.invoke
 			return getRemoteInvocationExecutor().invoke(invocation, targetObject);
 		}
 		catch (NoSuchMethodException ex) {
@@ -104,6 +113,20 @@ public abstract class RemoteInvocationBasedExporter extends RemoteExporter {
 	 * <p>Can be overridden in subclasses for custom invocation behavior,
 	 * for example to return additional context information. Note that this
 	 * is not covered by the RemoteInvocationExecutor strategy!
+	 *
+	 * 这段函数有两点需要说明的地方
+	 * 1、对应方法的激活也就是 invoke 方法的调用，虽然经过层层环绕，但是最终还是实现了一个我们熟知的调用
+	 * invocation.invoke(targetObject)，也就是执行 RemoteInvocation 类中的invoke 方法，
+	 * 大致的逻辑还是通过 RemoteInvocation 中对应的方法信息在targetObject 上去执行，
+	 * 此方法在分析 RMI 功能的时候已经分析过，不再赘述。
+	 *
+	 * 但是在对于当前方法的 targetObject 参数，此targetObject 是代理类，调用代理类的时候需要考虑增强方法的调用，
+	 * 这是读者需要注意的地方。
+	 *
+	 * 2、对于返回结果需要使用 RemoteInvocationResult 进行封装，之所以需要通过使用RemoteInvocationResult 类进行封装，
+	 * 是因为无法保证对于所有操作的返回结果都继承 Serializable 接口，也就是说无法保证所有返回结果都可以直接进行序列化，
+	 * 那么，就必须使用 RemoteInvocationResult 类进行统一封装。
+	 *
 	 * @param invocation the remote invocation
 	 * @param targetObject the target object to apply the invocation to
 	 * @return the invocation result
@@ -111,7 +134,9 @@ public abstract class RemoteInvocationBasedExporter extends RemoteExporter {
 	 */
 	protected RemoteInvocationResult invokeAndCreateResult(RemoteInvocation invocation, Object targetObject) {
 		try {
+			// 激活代理类中 invocation 中的方法
 			Object value = invoke(invocation, targetObject);
+			//封装结果以便于序列化
 			return new RemoteInvocationResult(value);
 		}
 		catch (Throwable ex) {

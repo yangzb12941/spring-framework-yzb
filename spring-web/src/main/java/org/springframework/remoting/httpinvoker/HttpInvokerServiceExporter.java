@@ -52,6 +52,55 @@ import org.springframework.web.util.NestedServletException;
  * endpoints to untrusted clients but rather just between your own services.</b>
  * In general, we strongly recommend any other message format (e.g. JSON) instead.
  *
+ * Spring 开发小组意识到在RMI服务和基于HTTP 的服务(如Hessian和 Burlap)之间的空白。
+ * 一方面，RMI使用Java标准的对象序列化，但很难穿越防火墙;
+ * 另一方面，Hessian/Burlap能很好地穿过防火墙工作，但使用自己私有的一套对象序列化机制。
+ *
+ * 就这样，Spring的HttpInvoker 应运而生。HttpInvoker 是一个新的远程调用模型，作为Spring框架的一部分，
+ * 来执行基于HTTP 的远程调用(让防火墙高兴的事 )，并使用Java 的序列化机制(这是让程序员高兴的事)。
+ *
+ * 我们首先看看 HttpInvoker 的使用示例。HttpInvoker 是基于HTTP 的远程调用，
+ * 同时也是使用Spring中提供的web 服务作为基础，所以我们的测试需要首先搭建Web工程。
+ *
+ * 使用示例：
+ * 1、创建对外接口
+ * public interface HttpInvokerTestI{
+ *     public String getTestPo(String desp);
+ * }
+ * 2、创建接口实现类
+ * public class HttpInvokerTestImpl implements HttpInvokerTestI{
+ *   @Override
+ *    public String getTestPo(String desp)
+ *    {return "getTestPo " + desp;}
+ * }
+ * 3、创建服务端配置文件 applicationContext-server.xml
+ * <bean name=”httpInvokerTest" class="test.HttpinvokerTestImpl"/>
+ *
+ * 4、WEB-INF 下创建remote-servlet.xml
+ * <bean name="/hit" class="org.Springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+ *   <property name="service" ref="httpInvokerTest" />
+ *   <property name="serviceInterface" value="test.HttpInvokerTestI"/>
+ * </bean>
+ *
+ * 5、创建测试端配置 client.xml
+ * <bean id="remoteService" class="org.Springframework.remoting.httpinvoker,HttpInvokerProxyFactoryBean">
+ *   <property name="serviceUrl" value="http://localhost:8080/httpinvokertest/remoting/hitn/>
+ *   <property name="serviceInterface" value="test.HttpInvokerTestI"/>
+ * </bean>
+ *
+ * 6、测试类
+ * public static void main(String[] args){
+ *    ApplicationContext context = new ClassPathXmlApplicationContext ("classpath:client.xml");
+ *    HttpInvokerTestI httpInvokerTestI = (HttpInvokerTestI) context.getBean("remoteService");
+ *    System.out.println(httpInvokerTestI.getTestPo("dddd"));
+ * }
+ *
+ * 通过层次关系我们看到 HttpInvokerServiceExporter类实现了 InitializingBean 接口以及HttpRequestHandler 接口。
+ * 分析RMI服务时我们已经了解到了，当某个bean 继承自InitializingBean接口的时候，Spring 会确保这个 bean 在初始化时调用其
+ * afterPropertiesSet 方法，而对于HtpRequestHandler 接口，因为我们在配置中已经将此接口配置成Web 服务，那么当有相应请
+ * 求的时候，Spring的 Web 服务就会将程序引导至 HttpRequestHandler 的 handleRequest 方法中首先，
+ * 我们从afterPropertiesSet 方法开始分析，看看在 bean 的初始化过程中做了哪些逻辑。
+ *
  * @author Juergen Hoeller
  * @since 1.1
  * @see HttpInvokerClientInterceptor
@@ -64,6 +113,16 @@ public class HttpInvokerServiceExporter extends RemoteInvocationSerializingExpor
 	/**
 	 * Reads a remote invocation from the request, executes it,
 	 * and writes the remote invocation result to the response.
+	 *
+	 * 当有 Web 请求时，根据配置中的规则会把路径匹配的访问直接引入对应的 HtpRequestHandler 中。
+	 * 本例中的 Web 请求与普通的 Web 请求是有些区别的，因为此处的请求包含着HttpInvoker的处理过程。
+	 *
+	 * 在handlerRequest 函数中，我们很清楚地看到了 HttpInvoker 处理的大致框架。
+	 * HttpInvoker服务简单点说就是将请求的方法，也就是 RemoteInvocation 对象，
+	 * 从客户端序列化并通过 Web请求出入服务端，服务端在对传过来的序列化对象进行反序列化还原RemoteInvocation实例，
+	 * 然后通过实例中的相关信息进行相关方法的调用，并将执行结果再次的返回给客户端。
+	 * 从 handleRequest 函数中我们也可以清晰地看到程序执行的框架结构。
+	 *
 	 * @see #readRemoteInvocation(HttpServletRequest)
 	 * @see #invokeAndCreateResult(org.springframework.remoting.support.RemoteInvocation, Object)
 	 * @see #writeRemoteInvocationResult(HttpServletRequest, HttpServletResponse, RemoteInvocationResult)
@@ -73,8 +132,11 @@ public class HttpInvokerServiceExporter extends RemoteInvocationSerializingExpor
 			throws ServletException, IOException {
 
 		try {
+			// 从 request 中读取列化对象
 			RemoteInvocation invocation = readRemoteInvocation(request);
+			//执行调用
 			RemoteInvocationResult result = invokeAndCreateResult(invocation, getProxy());
+			// 将结果的序列化对象写入输出流
 			writeRemoteInvocationResult(request, response, result);
 		}
 		catch (ClassNotFoundException ex) {
@@ -112,9 +174,10 @@ public class HttpInvokerServiceExporter extends RemoteInvocationSerializingExpor
 	 */
 	protected RemoteInvocation readRemoteInvocation(HttpServletRequest request, InputStream is)
 			throws IOException, ClassNotFoundException {
-
+		// 创建对象输入流
 		ObjectInputStream ois = createObjectInputStream(decorateInputStream(request, is));
 		try {
+			// 从输入流中读取序列化对象
 			return doReadRemoteInvocation(ois);
 		}
 		finally {
@@ -169,10 +232,11 @@ public class HttpInvokerServiceExporter extends RemoteInvocationSerializingExpor
 	protected void writeRemoteInvocationResult(
 			HttpServletRequest request, HttpServletResponse response, RemoteInvocationResult result, OutputStream os)
 			throws IOException {
-
+		//获取输入流
 		ObjectOutputStream oos =
 				createObjectOutputStream(new FlushGuardedOutputStream(decorateOutputStream(request, response, os)));
 		try {
+			//将序列化对象写入输入流
 			doWriteRemoteInvocationResult(result, oos);
 		}
 		finally {

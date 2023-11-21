@@ -210,8 +210,9 @@ public class RemoteInvocation implements Serializable {
 	 */
 	public Object invoke(Object targetObject)
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-
+		// 根据方法名称获取代理中对应的方法
 		Method method = targetObject.getClass().getMethod(this.methodName, this.parameterTypes);
+		// 执行代理中的方法
 		return method.invoke(targetObject, this.arguments);
 	}
 

@@ -187,13 +187,19 @@ public class HttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvoke
 	protected RemoteInvocationResult doExecuteRequest(
 			HttpInvokerClientConfiguration config, ByteArrayOutputStream baos)
 			throws IOException, ClassNotFoundException {
-
+		//创建HttpPost
 		HttpPost postMethod = createHttpPost(config);
+		//设置含有方法的输出流到post中
 		setRequestBody(config, postMethod, baos);
 		try {
+			// 执行方法并等待结果响应
 			HttpResponse response = executeHttpPost(config, getHttpClient(), postMethod);
+			// 验证:对于 HTTP 调用的响应码处理，大于 300 非正常调用的响应码
 			validateResponse(config, response);
+			//提取返回的输入流
 			InputStream responseBody = getResponseBody(config, response);
+			//从输入流中提取结果
+			// 提取结果的流程主要是从输入流中提取相应的序列化信息
 			return readRemoteInvocationResult(responseBody, config.getCodebaseUrl());
 		}
 		finally {
@@ -222,11 +228,13 @@ public class HttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvoke
 		if (localeContext != null) {
 			Locale locale = localeContext.getLocale();
 			if (locale != null) {
+				// 加入"Accept-Language"属性
 				httpPost.addHeader(HTTP_HEADER_ACCEPT_LANGUAGE, locale.toLanguageTag());
 			}
 		}
 
 		if (isAcceptGzipEncoding()) {
+			// 加入"Accept-Encoding"属性
 			httpPost.addHeader(HTTP_HEADER_ACCEPT_ENCODING, ENCODING_GZIP);
 		}
 
@@ -279,6 +287,11 @@ public class HttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvoke
 	 * <p>The default implementation simply sets the serialized invocation as the
 	 * HttpPost's request body. This can be overridden, for example, to write a
 	 * specific encoding and to potentially set appropriate HTTP request headers.
+	 *
+	 * 构建好PostMethod实例后便可以将存储 RemoteInvocation 实例的序列化对象的输出流设置进去，
+	 * 当然这里需要注意的是传入的 ContentType类型，一定要传入application/x-java-serialized-object
+	 * 以保证服务端解析时会按照序列化对象的解析方式进行解析。
+	 *
 	 * @param config the HTTP invoker configuration that specifies the target service
 	 * @param httpPost the HttpPost to set the request body on
 	 * @param baos the ByteArrayOutputStream that contains the serialized
@@ -288,7 +301,7 @@ public class HttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvoke
 	protected void setRequestBody(
 			HttpInvokerClientConfiguration config, HttpPost httpPost, ByteArrayOutputStream baos)
 			throws IOException {
-
+		// 将序列化流加入到postMethod 中并声明 ContentType 类型为 application/x-java-serialized-object
 		ByteArrayEntity entity = new ByteArrayEntity(baos.toByteArray());
 		entity.setContentType(getContentType());
 		httpPost.setEntity(entity);

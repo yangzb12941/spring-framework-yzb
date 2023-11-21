@@ -59,12 +59,19 @@ public class HttpInvokerProxyFactoryBean extends HttpInvokerClientInterceptor im
 	@Nullable
 	private Object serviceProxy;
 
-
+	/**
+	 * 在 afterPropertiesSet 中主要创建了一个代理，该代理封装了配置的服务接口，并使用当前类也就是
+	 * HttpInvokerProxyFactoryBean 作为增强。因为 HttpInvokerProxyFactoryBean 实现了
+	 * MethodInterceptor 方法，所以可以作为增强拦截器。同样，又由于HttpInvokerProxyFactoryBean
+	 * 实现了 FactoryBean 接口，所以通过Spring中普通方式调用该 bean 时调用的并不是该 bean 本身，
+	 * 而是此类中getObject 方法返回的实例，也就是实例化过程中所创建的代理。
+	 */
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 		Class<?> ifc = getServiceInterface();
 		Assert.notNull(ifc, "Property 'serviceInterface' is required");
+		// 创建代理并使用当前方法为拦截器增强
 		this.serviceProxy = new ProxyFactory(ifc, this).getProxy(getBeanClassLoader());
 	}
 

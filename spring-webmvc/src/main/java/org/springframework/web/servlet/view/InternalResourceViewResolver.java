@@ -37,6 +37,11 @@ import org.springframework.util.ClassUtils;
  * always needs to be last, as it will attempt to resolve any view name,
  * no matter whether the underlying resource actually exists.
  *
+ * 通读以上代码，我们发现对于InternalResourceViewResolver 所提供的解析功能主要考虑到了几个方面的处理。
+ * 1、基于效率的考虑，提供了缓存的支持。
+ * 2、提供了对redirect:xx和forward:xx前缀的支持。
+ * 3、添加了前缀及后缀，并向 View 中加入了必需的属性设置
+ *
  * @author Juergen Hoeller
  * @since 17.02.2003
  * @see #setViewClass
