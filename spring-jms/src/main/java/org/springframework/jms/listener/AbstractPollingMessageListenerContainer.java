@@ -227,6 +227,11 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 	/**
 	 * Execute the listener for a message received from the given consumer,
 	 * wrapping the entire operation in an external transaction if demanded.
+	 *
+	 * DefaultMessageListenerContainer 消息监听器容器建立在 SimpleMessageListenerContainer 容器之上，
+	 * 它添加了对事务的支持，那么此时，事务特性的实现就开始了。如果用户配置了 this.transactionManager，也就是配置了事务。
+	 * 那么，消息的接收会被控制在事务之内，一旦出现任何异常都会被回滚，而回滚操作也会交由事务管理器统一处理。比如this.transactionManagerRollback(status)。
+	 *
 	 * @param session the JMS Session to work on
 	 * @param consumer the MessageConsumer to work on
 	 * @return whether a message has been received
@@ -239,6 +244,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 
 		if (this.transactionManager != null) {
 			// Execute receive within transaction.
+			// 事务执行
 			TransactionStatus status = this.transactionManager.getTransaction(this.transactionDefinition);
 			boolean messageReceived;
 			try {
@@ -254,6 +260,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 
 		else {
 			// Execute receive outside of transaction.
+			// 无事务执行
 			return doReceiveAndExecute(invoker, session, consumer, null);
 		}
 	}
@@ -300,6 +307,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 				consumerToUse = createListenerConsumer(sessionToUse);
 				consumerToClose = consumerToUse;
 			}
+			// 接收消息
 			Message message = receiveMessage(consumerToUse);
 			if (message != null) {
 				if (logger.isDebugEnabled()) {
@@ -307,6 +315,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 							consumerToUse + "] of " + (transactional ? "transactional " : "") + "session [" +
 							sessionToUse + "]");
 				}
+				//模板方法，当消息接收且在未处理前给子类机会做相应处理，档期空实现
 				messageReceived(invoker, sessionToUse);
 				boolean exposeResource = (!transactional && isExposeListenerSession() &&
 						!TransactionSynchronizationManager.hasResource(obtainConnectionFactory()));
@@ -315,6 +324,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 							obtainConnectionFactory(), new LocallyExposedJmsResourceHolder(sessionToUse));
 				}
 				try {
+					//激活监听器
 					doExecuteListener(sessionToUse, message);
 				}
 				catch (Throwable ex) {
@@ -344,6 +354,7 @@ public abstract class AbstractPollingMessageListenerContainer extends AbstractMe
 					logger.trace("Consumer [" + consumerToUse + "] of " + (transactional ? "transactional " : "") +
 							"session [" + sessionToUse + "] did not receive a message");
 				}
+				//接收到空消息的处理
 				noMessageReceived(invoker, sessionToUse);
 				// Nevertheless call commit, in order to reset the transaction timeout (if any).
 				if (shouldCommitAfterNoMessageReceived(sessionToUse)) {

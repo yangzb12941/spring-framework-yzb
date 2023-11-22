@@ -27,6 +27,12 @@ import org.springframework.lang.Nullable;
  * listener container. Not meant to be implemented externally with
  * support for both JMS and JCA style containers.
  *
+ * 三个接口实现类：
+ * SimpleMessageListenerContainer:最简单的消息监听器容器，只能处理固定数量的JMS会话，且不支持事务。
+ * DefaultMessageListenerContainer: 这个消息监听器容器建立在 SimpleMessageListenerContainer 容器之上，添加了对事务的支持
+ * serversession.ServerSessionMessage.ListenerContainer:这是功能最强大的消息监听器，与DefaultMessageListenerContainer 相同，
+ *   除了支持事务，它还允许动态地管理MS 会话。
+ *
  * @author Stephane Nicoll
  * @since 4.1
  */

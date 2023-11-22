@@ -549,6 +549,12 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 	@Override
 	protected void doInitialize() throws JMSException {
 		synchronized (this.lifecycleMonitor) {
+			// 消息监听器允许创建多个 Session 和 MessageConsumer 来接收消息。
+			// 具体的个数由concurrentConsumers属性指定。需要注意的是，应该只是在
+			// Destination为 Queue 的时候才使用多个MessageConsumer(Queue 中的一个消息只能被一个 Consumer 接收)，
+			// 虽然使用多个MessageConsumer 会提高消息处理的性能，但是消息处理的顺序却得不到保证。
+			// 消息被接收的顺序仍然是消息发送时的顺序，但是由于消息可能会被并发处理，因此消息处理的顺序可能和消息发送的顺序不同。
+			// 此外，不应该在 Destination 为 Topic 的时候使用多个MessageConsumer,因为多个MessageConsumer 会接收到同样的消息
 			for (int i = 0; i < this.concurrentConsumers; i++) {
 				scheduleNewInvoker();
 			}
@@ -711,6 +717,7 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 		AsyncMessageListenerInvoker invoker = new AsyncMessageListenerInvoker();
 		if (rescheduleTaskIfNecessary(invoker)) {
 			// This should always be true, since we're only calling this when active.
+			// 这应该总是正确的，因为我们只在活动时调用它。
 			this.scheduledInvokers.add(invoker);
 		}
 	}
@@ -1064,19 +1071,29 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 		@Nullable
 		private volatile Thread currentReceiveThread;
 
+		/**
+		 * 以下函数主要根据变量 maxMessagesPerTask 的值来分情况处理。当然，函数中还使用了大量的代码处理异常机制的数据维护。
+		 * 其实核心的处理就是调用 invokeListener 来接收消息并激活消息监听器，
+		 * 但是之所以两种情况分开处理，正是考虑到在无限制循环接收消息的情况下，
+		 * 用户可以通过设置标志位 running来控制消息接收的暂停与恢复，并维护当前消息监听器的数量。
+		 */
 		@Override
 		public void run() {
+			//并发控制
 			synchronized (lifecycleMonitor) {
 				activeInvokerCount++;
 				lifecycleMonitor.notifyAll();
 			}
 			boolean messageReceived = false;
+			// 根据每个任务设置的最大处理消息数量而作不同处理
+			// 小于0默认为无限制，一直接收消息。
 			try {
 				if (maxMessagesPerTask < 0) {
 					messageReceived = executeOngoingLoop();
 				}
 				else {
 					int messageCount = 0;
+					// 消息数量控制， 一旦超出数量则停止循环
 					while (isRunning() && messageCount < maxMessagesPerTask) {
 						messageReceived = (invokeListener() || messageReceived);
 						messageCount++;
@@ -1084,6 +1101,7 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 				}
 			}
 			catch (Throwable ex) {
+				//清理操作，包括关闭session
 				clearResources();
 				if (!this.lastMessageSucceeded) {
 					// We failed more than once in a row or on startup -
@@ -1150,16 +1168,30 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 				synchronized (lifecycleMonitor) {
 					boolean interrupted = false;
 					boolean wasWaiting = false;
+					// 如果当前任务已经处于激活状态，但是却给了暂时终止的命令
+					// 如果按照正常的流程其实是不会进入 while 循环中的，而是直接进入函数invokeListener()
+					// 来接收消息并激活监听器。但是，不可能让循环一直持续下去，我们要考虑到暂停线程或者恢复线程的情况，
+					// 这时，isRunning()函数就派上用场了。
+					// isRunning()用来检测标志位this.running状态进而判断是否需要进入 while循环。
+					// 由于要维护当前线程激活数量，所以引入了 wasWaiting 变量，用来判断线程是否处于等待状态。
+					// 如果线程首次进入等待状态，则需要减少线程来激活数量计数器。
+					// 当然，还有一个地方需要提一下，就是线程等待不是一味地采用 while 循环来控制，因为如果单纯地采用 while循环会浪费 CPU的时钟周期，
+					// 给资源造成巨大的浪费。这里，Spring采用全局控制变量 lifecycleMonitor 的 wait()方法来暂停线程.
+					// 所以，如果终止线程需要再次恢复的话除了更改 this.running 标志位外，还需要调用 lifecycleMonitor.notify()
+					// 或者 lifecycleMonitor.notifyAll()来使线程恢复。
 					while ((active = isActive()) && !isRunning()) {
 						if (interrupted) {
 							throw new IllegalStateException("Thread was interrupted while waiting for " +
 									"a restart of the listener container, but container is still stopped");
 						}
 						if (!wasWaiting) {
+							// 如果并非处于等待则说明是第一次执行， 需要将激活任务数量减少
 							decreaseActiveInvokerCount();
 						}
+						//开始进入等待状态，等待任务的恢复命令
 						wasWaiting = true;
 						try {
+							//通过wait等待，也就是等待notify或者notifyAll
 							lifecycleMonitor.wait();
 						}
 						catch (InterruptedException ex) {
@@ -1168,6 +1200,7 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 							interrupted = true;
 						}
 					}
+					//正常处理流程
 					if (wasWaiting) {
 						activeInvokerCount++;
 					}
@@ -1185,8 +1218,10 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 		private boolean invokeListener() throws JMSException {
 			this.currentReceiveThread = Thread.currentThread();
 			try {
+				//初始化资源包括首次创建的时 session 与 consumer
 				initResourcesIfNecessary();
 				boolean messageReceived = receiveAndExecute(this, this.session, this.consumer);
+				//改变标志位，信息成功处理
 				this.lastMessageSucceeded = true;
 				return messageReceived;
 			}

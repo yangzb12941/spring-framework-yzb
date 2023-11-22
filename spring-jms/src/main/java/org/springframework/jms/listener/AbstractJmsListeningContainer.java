@@ -163,8 +163,11 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 */
 	@Override
 	public void afterPropertiesSet() {
+		// 验证 connectionFactory
 		super.afterPropertiesSet();
+		// 验证配置文件
 		validateConfiguration();
+		//初始化
 		initialize();
 	}
 
@@ -198,10 +201,12 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 */
 	public void initialize() throws JmsException {
 		try {
+			//用于控制生命周期的同步处理
 			synchronized (this.lifecycleMonitor) {
 				this.active = true;
 				this.lifecycleMonitor.notifyAll();
 			}
+			// org.springframework.jms.listener.DefaultMessageListenerContainer.doInitialize
 			doInitialize();
 		}
 		catch (JMSException ex) {
@@ -515,6 +520,10 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	protected final boolean rescheduleTaskIfNecessary(Object task) {
 		if (this.running) {
 			try {
+				// 分析源码得知，根据concurrentConsumers 数量建立了对应数量的线程，根据以上代码至少可以推断出 doRescheduleTask
+				// 函数其实是在开启一个线程执行Runnable。我们反追踪这个传入的参数，可以看到它其实是AsyncMessageListenerInvoker类型实例。
+				// 因此我们可以推断，Spring 根据concurrentConsumers数量建立了对应数量的线程，而每个线程都作为一个独立的接收者在循环接收消息。
+				// 于是我们把所有的焦点转向 AsyncMessageListenerInvoker 这个类的实现，因为它作为一个Runnable角色去执行，所以对这个类的分析从run 方法开始。
 				doRescheduleTask(task);
 			}
 			catch (RuntimeException ex) {

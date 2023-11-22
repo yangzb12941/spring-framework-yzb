@@ -475,6 +475,13 @@ public class JmsTemplate extends JmsDestinationAccessor implements JmsOperations
 	 * <p>Use {@code execute(SessionCallback)} for the general case.
 	 * Starting the JMS Connection is just necessary for receiving messages,
 	 * which is preferably achieved through the {@code receive} methods.
+	 *
+	 * 在单独使用 activeMQ时，我们知道为了发送一条消息需要做很多工作，它需要很多的辅助代码，而这些代码又都是千篇一律的，
+	 * 没有任何的差异。所以 execute 方法的目的就是帮助我们抽离这些冗余代码，从而使我们更加专注于业务逻辑的实现。
+	 * 从函数中看，这些冗余代码包括创建Connection、创建 Session，当然也包括关闭 Session 和关闭 Connection。
+	 * 而在准备工作结束后，将调用回调函数将程序引入用户自定义实现的个性化处理。
+	 * 至于如何创建 Session与Connection，有兴趣的读者可以进一步研究Spring的源码。
+	 *
 	 * @param action callback object that exposes the Session
 	 * @param startConnection whether to start the Connection
 	 * @return the result object from working with the Session
@@ -491,8 +498,11 @@ public class JmsTemplate extends JmsDestinationAccessor implements JmsOperations
 			Session sessionToUse = ConnectionFactoryUtils.doGetTransactionalSession(
 					obtainConnectionFactory(), this.transactionalResourceFactory, startConnection);
 			if (sessionToUse == null) {
+				//创建connection
 				conToClose = createConnection();
+				//根据 connection 创建 session
 				sessionToClose = createSession(conToClose);
+				// 是否开启向服务器推送连接信息，只有接收信息时需要，发送时不需要
 				if (startConnection) {
 					conToClose.start();
 				}
@@ -501,13 +511,16 @@ public class JmsTemplate extends JmsDestinationAccessor implements JmsOperations
 			if (logger.isDebugEnabled()) {
 				logger.debug("Executing callback on JMS Session: " + sessionToUse);
 			}
+			// 调用回调函数
 			return action.doInJms(sessionToUse);
 		}
 		catch (JMSException ex) {
 			throw convertJmsAccessException(ex);
 		}
 		finally {
+			//关闭 session
 			JmsUtils.closeSession(sessionToClose);
+			//释放链接
 			ConnectionFactoryUtils.releaseConnection(conToClose, getConnectionFactory(), startConnection);
 		}
 	}
@@ -599,6 +612,8 @@ public class JmsTemplate extends JmsDestinationAccessor implements JmsOperations
 			throws JMSException {
 
 		Assert.notNull(messageCreator, "MessageCreator must not be null");
+		// 发送消息时还是遵循着消息发送的规则，比如根据 Destination 创建
+		// MessageProducer、Message，并使用 MessageProducer 实例来发送消息。
 		MessageProducer producer = createProducer(session, destination);
 		try {
 			Message message = messageCreator.createMessage(session);
