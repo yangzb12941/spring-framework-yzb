@@ -88,6 +88,9 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 
 	/**
 	 * Obtain an object to expose from the given FactoryBean.
+	 *
+	 * 从给定的FactoryBean中获取要公开的对象。
+	 *
 	 * @param factory the FactoryBean instance
 	 * @param beanName the name of the bean
 	 * @param shouldPostProcess whether the bean is subject to post-processing
@@ -104,7 +107,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 					object = doGetObjectFromFactoryBean(factory, beanName);
 					// Only post-process and store if not put there already during getObject() call above
 					// (e.g. because of circular reference processing triggered by custom getBean calls)
-					//如果在上面的getObject()调用期间还没有放在那里，则只进行后期处理和存储（例如，因为自定义getBean调用触发了循环引用处理）
+					//如果在上面的 getObject() 调用期间还没有放在那里，则只进行后期处理和存储（例如，因为自定义getBean调用触发了循环引用处理）
 					Object alreadyThere = this.factoryBeanObjectCache.get(beanName);
 					if (alreadyThere != null) {
 						object = alreadyThere;
@@ -256,6 +259,9 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 * Return the security context for this bean factory. If a security manager
 	 * is set, interaction with the user code will be executed using the privileged
 	 * of the security context returned by this method.
+	 *
+	 * 返回此bean工厂的安全上下文。如果设置了安全管理器，则将使用此方法返回的安全上下文的特权执行与用户代码的交互。
+	 *
 	 * @see AccessController#getContext()
 	 */
 	protected AccessControlContext getAccessControlContext() {

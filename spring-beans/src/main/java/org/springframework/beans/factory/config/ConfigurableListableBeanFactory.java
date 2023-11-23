@@ -72,6 +72,12 @@ public interface ConfigurableListableBeanFactory
 	 * ApplicationContext instance that the bean is living in.
 	 * <p>Note: There are no such default types registered in a plain BeanFactory,
 	 * not even for the BeanFactory interface itself.
+	 *
+	 * 使用相应的autowired值注册一个特殊的依赖项类型
+	 * 这适用于那些本应可自动布线但未在工厂中定义为bean的factoryContext引用。
+	 * 例如，ApplicationContext类型的依赖项解析为bean所在的ApplicationContext实例。
+	 * 注意：在纯BeanFactory中没有注册此类默认类型，甚至连BeanFactory接口本身也没有。
+	 *
 	 * @param dependencyType the dependency type to register. This will typically
 	 * be a base interface such as BeanFactory, with extensions of it resolved
 	 * as well if declared as an autowiring dependency (e.g. ListableBeanFactory),

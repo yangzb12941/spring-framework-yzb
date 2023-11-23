@@ -26,7 +26,7 @@ import org.springframework.core.AliasRegistry;
  * and ChildBeanDefinition instances. Typically implemented by BeanFactories that
  * internally work with the AbstractBeanDefinition hierarchy.
  *
- * 用于保存bean定义的注册表的接口，例如RootBeanDefinition和ChildBeanDefination实例。
+ * 用于保存bean定义的注册表的接口，例如RootBeanDefinition和ChildBeanDefinition实例。
  * 通常由内部使用AbstractBeanDefinition层次结构的BeanFactories实现。
  *
  * <p>This is the only interface in Spring's bean factory packages that encapsulates
@@ -38,7 +38,9 @@ import org.springframework.core.AliasRegistry;
  * <p>Spring's bean definition readers expect to work on an implementation of this
  * interface. Known implementors within the Spring core are DefaultListableBeanFactory
  * and GenericApplicationContext.
- * <p> Spring的bean定义阅读器希望处理此接口的实现。Spring核心中的已知实现者是DefaultListableBeanFactory和GenericApplicationContext。
+ *
+ * Spring的bean定义阅读器希望处理此接口的实现。
+ * Spring核心中的已知实现者是DefaultListableBeanFactory和GenericApplicationContext。
  *
  * 定义对 BeanDefinition 的各种增删改操作
  *

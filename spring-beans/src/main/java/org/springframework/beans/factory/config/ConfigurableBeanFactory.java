@@ -123,6 +123,10 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
 	 * <p>Turn this flag off to enable hot-refreshing of bean definition objects
 	 * and in particular bean classes. If this flag is off, any creation of a bean
 	 * instance will re-query the bean class loader for newly resolved classes.
+	 *
+	 * 设置是否缓存bean元数据，例如给定的bean定义（以合并的方式）和已解析的bean类。默认值为on。
+	 * ＜p＞关闭此标志可以启用bean定义对象的热刷新，尤其是bean类。如果该标志处于关闭状态，
+	 * 则任何创建bean实例的操作都将在bean类加载器中重新查询新解析的类。
 	 */
 	void setCacheBeanMetadata(boolean cacheBeanMetadata);
 

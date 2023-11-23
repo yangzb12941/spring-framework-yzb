@@ -75,6 +75,7 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	/**
 	 * Constant that indicates autowiring bean properties by name
 	 * (applying to all bean property setters).
+	 * 通过名称注入
 	 * @see #createBean
 	 * @see #autowire
 	 * @see #autowireBeanProperties
@@ -84,6 +85,7 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	/**
 	 * Constant that indicates autowiring bean properties by type
 	 * (applying to all bean property setters).
+	 * 通过类型注入
 	 * @see #createBean
 	 * @see #autowire
 	 * @see #autowireBeanProperties
@@ -93,6 +95,7 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	/**
 	 * Constant that indicates autowiring the greediest constructor that
 	 * can be satisfied (involves resolving the appropriate constructor).
+	 * 通过构造方法注入
 	 * @see #createBean
 	 * @see #autowire
 	 */
@@ -101,6 +104,7 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	/**
 	 * Constant that indicates determining an appropriate autowire strategy
 	 * through introspection of the bean class.
+	 * 自动识别 注入策略
 	 * @see #createBean
 	 * @see #autowire
 	 * @deprecated as of Spring 3.0: If you are using mixed autowiring strategies,

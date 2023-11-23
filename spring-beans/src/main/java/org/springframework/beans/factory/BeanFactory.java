@@ -49,7 +49,7 @@ import org.springframework.lang.Nullable;
  *
  * 例如:bean的作用范围：
  * 1，singleton Spring ioc 容器中仅有一个Bean 实例，Bean 以单例的方式存在；
- * 对于单例Bean，每次都会返回一个共享的实例，客服端不能控制Bean的销毁，spring容器负责跟踪Bean实例的产生，销毁。
+ * 对于单例Bean，每次都会返回一个共享的实例，客户端不能控制Bean的销毁，spring容器负责跟踪Bean实例的产生，销毁。
  *
  * 2，prototype (原型多实例) 每次从容器中调用Bean 时，都返回一个新的实例；每次都是通过反射的方式创建新的对象。
  * Spring容器仅仅负责创建Bean的实例。Bean完全由客服端的代码管理，容器不再去跟踪他们的生命周期。每次都去创建新的实例。
@@ -175,6 +175,10 @@ public interface BeanFactory {
 	 * beans <i>created</i> by the FactoryBean. For example, if the bean named
 	 * {@code myJndiObject} is a FactoryBean, getting {@code &myJndiObject}
 	 * will return the factory, not the instance returned by the factory.
+	 *
+	 * 用于取消引用｛@link FactoryBean｝实例，并将其与FactoryBean创建的＜i＞bean区分开来。
+	 * 例如，如果名为{@code myJndiObject}的bean是FactoryBean，
+	 * 则获取{@code &myJndiObject｝将返回工厂，而不是工厂返回的实例。
 	 */
 	String FACTORY_BEAN_PREFIX = "&";
 

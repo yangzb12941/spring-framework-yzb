@@ -101,7 +101,7 @@ import org.springframework.util.StringValueResolver;
  * respectively. Default implementations of those operations can be found in
  * {@link DefaultListableBeanFactory} and {@link AbstractAutowireCapableBeanFactory}.
  *
- * BeanFactory实现的抽象基类，提供可配置BeanFactor SPI的全部功能。
+ * BeanFactory 实现的抽象基类，提供可配置BeanFactor SPI的全部功能。
  * 不假设有一个可列出的bean工厂：因此也可以用作bean工厂实现的基类，这些实现从一些后端资源获取bean定义
  * （其中bean定义访问是一项昂贵的操作）。 这个类提供了一个单例缓存（通过其基类DefaultSingletonBeanRegistry、
  * 单例/原型确定、FactoryBean处理、别名、子bean定义的bean定义合并以及bean销毁
@@ -128,35 +128,44 @@ import org.springframework.util.StringValueResolver;
 public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport implements ConfigurableBeanFactory {
 
 	/** Parent bean factory, for bean inheritance support. */
+	// 父bean工厂，用于bean继承支持
 	@Nullable
 	private BeanFactory parentBeanFactory;
 
 	/** ClassLoader to resolve bean class names with, if necessary. */
+	// ClassLoader来解析bean类名，如果需要的话。
 	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
 	/** ClassLoader to temporarily resolve bean class names with, if necessary. */
+	// ClassLoader，以便在必要时使用临时解析bean类名。
 	@Nullable
 	private ClassLoader tempClassLoader;
 
 	/** Whether to cache bean metadata or rather reobtain it for every access. */
+	// 是缓存bean元数据，还是每次访问都重新获取它。
 	private boolean cacheBeanMetadata = true;
 
 	/** Resolution strategy for expressions in bean definition values. */
+	// bean定义值中表达式的解析策略。
 	@Nullable
 	private BeanExpressionResolver beanExpressionResolver;
 
 	/** Spring ConversionService to use instead of PropertyEditors. */
+	// 要使用的Spring ConversionService，而不是PropertyEditors
 	@Nullable
 	private ConversionService conversionService;
 
 	/** Custom PropertyEditorRegistrars to apply to the beans of this factory. */
+	// 要应用到此工厂的bean的自定义PropertyEditorRegistrars。
 	private final Set<PropertyEditorRegistrar> propertyEditorRegistrars = new LinkedHashSet<>(4);
 
 	/** Custom PropertyEditors to apply to the beans of this factory. */
+	// 要应用于此工厂的bean的自定义PropertyEditors。
 	private final Map<Class<?>, Class<? extends PropertyEditor>> customEditors = new HashMap<>(4);
 
 	/** A custom TypeConverter to use, overriding the default PropertyEditor mechanism. */
+	// 要使用的自定义TypeConverter，覆盖默认的PropertyEditor机制。
 	@Nullable
 	private TypeConverter typeConverter;
 
@@ -173,6 +182,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private volatile boolean hasDestructionAwareBeanPostProcessors;
 
 	/** Map from scope identifier String to corresponding Scope. */
+	// 从作用域标识符String映射到相应的作用域。
 	private final Map<String, Scope> scopes = new LinkedHashMap<>(8);
 
 	/** Security context used when running with a SecurityManager. */

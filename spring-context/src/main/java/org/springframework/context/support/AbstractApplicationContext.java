@@ -232,6 +232,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Nullable
 	private Set<ApplicationEvent> earlyApplicationEvents;
 
+	private ApplicationEventMulticaster applicationEventMulticaster;
+
 
 	/**
 	 * Create a new AbstractApplicationContext with no parent.

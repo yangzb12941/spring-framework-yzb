@@ -43,6 +43,9 @@ import org.springframework.util.StringUtils;
  * Allows for registering singleton instances that should be shared
  * for all callers of the registry, to be obtained via bean name.
  *
+ * 共享bean实例的通用注册表，实现{@linkorg.springframework.beans.factory.config.SingletonBeanRegistry}。
+ * 允许注册应该为注册表的所有调用方共享的singleton实例，这些实例可以通过bean名称获得。
+ *
  * <p>Also supports registration of
  * {@link org.springframework.beans.factory.DisposableBean} instances,
  * (which might or might not correspond to registered singletons),
@@ -118,6 +121,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 	/** Map between dependent bean names: bean name to Set of dependent bean names. */
 	// 依赖bean名称之间的映射：bean名称到依赖bean名集。
+	// 创建这个bean 需要依赖哪些 bean
 	private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
 
 	/** Map between depending bean names: bean name to Set of bean names for the bean's dependencies. */
