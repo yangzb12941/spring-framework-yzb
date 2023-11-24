@@ -29,6 +29,12 @@ package org.springframework.core;
  *
  * <p>Further discoverers may be added through {@link #addDiscoverer(ParameterNameDiscoverer)}.
  *
+ * ｛@link ParameterNameDiscoverer｝策略接口的默认实现，使用Java 8标准反射机制（如果可用），
+ * 并返回到基于ASM的｛@linkLocalVariableTableParameterNameDiscover｝，
+ * 以检查类文件中的调试信息<p> 如果存在Kotlin反射实现，则｛@link KotlinReflectionParameterNameDiscoverer｝
+ * 将首先添加到列表中，并用于Kotlin类和接口。当编译或作为Graal本机映像运行时，不使用{@link ParameterNameDiscoverer}<p>
+ * 可以通过{@link #addDiscoverer（ParameterNameDiscoverer）}添加更多的发现程序。
+ *
  * @author Juergen Hoeller
  * @author Sebastien Deleuze
  * @since 4.0

@@ -27,7 +27,14 @@ import org.springframework.lang.Nullable;
  * fashion can be found in the ConfigurableBeanFactory interface.
  *
  * 继承 BeanFactory ，也就是在 BeanFactory 定义的功能的基础
- * 上增加了对 parentFactory 支持
+ * 上增加了对 parentFactory 支持。
+ *
+ * HierarchicalBeanFactory：父子级联 IoC 容器的接口，子容器可以通过接口方法访问父容器；
+ * 通过 HierarchicalBeanFactory 接口， Spring 的 IoC 容器可以建立父子层级关联的容器体系，
+ * 子容器可以访问父容器中的 Bean，但父容器不能访问子容器的 Bean。
+ * Spring 使用父子容器实现了很多功能，比如在 Spring MVC 中，展现层 Bean 位于一个子容器中，
+ * 而业务层和持久层的 Bean 位于父容器中。
+ * 这样，展现层 Bean 就可以引用业务层和持久层的 Bean，而业务层和持久层的 Bean 则看不到展现层的 Bean。
  *
  * @author Rod Johnson
  * @author Juergen Hoeller

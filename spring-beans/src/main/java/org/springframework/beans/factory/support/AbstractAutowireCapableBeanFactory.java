@@ -293,8 +293,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #setAllowCircularReferences
 	 */
 	//设置是否允许将bean实例的原始注入到其他bean的属性中，尽管注入的bean最终会被包装（例如，通过AOP自动代理）。
-	//这只是在循环引用无法通过其他方式解决的情况下的最后手段：本质上，相对于整个bean连接过程的失败，更喜欢注入一个原始实例。
-	//从Spring2.0开始，默认值为“false”。启用此选项可以将未包装的生豆注入到一些引用中，这是Spring1.2的默认行为（可以说是不干净的）。
+	//这只是在循环引用无法通过其他方式解决的情况下的最后手段：本质上，相对于整个bean关联过程的失败，更喜欢注入一个原始实例。
+	//从Spring2.0开始，默认值为“false”。启用此选项可以将未包装的Bean注入到一些引用中，这是Spring1.2的默认行为（可以说是不干净的）。
 	//注意：通常建议不要依赖bean之间的循环引用，尤其是涉及自动代理的情况。
 	public void setAllowRawInjectionDespiteWrapping(boolean allowRawInjectionDespiteWrapping) {
 		this.allowRawInjectionDespiteWrapping = allowRawInjectionDespiteWrapping;
@@ -321,7 +321,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	//忽略自动连线的给定依赖项接口。
 	//应用程序上下文通常使用它来注册以其他方式解析的依赖项，如通过BeanFactoryAware的BeanFactor或
-	// 通过ApplicationContextAware的ApplicationContext。
+	//通过ApplicationContextAware的ApplicationContext。
 	//默认情况下，只忽略BeanFactoryAware接口。
 	//要忽略其他类型，请为每个类型调用此方法。
 

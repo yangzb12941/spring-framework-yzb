@@ -133,7 +133,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private BeanFactory parentBeanFactory;
 
 	/** ClassLoader to resolve bean class names with, if necessary. */
-	// ClassLoader来解析bean类名，如果需要的话。
+	// ClassLoader 来解析bean类名，如果需要的话。
 	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
@@ -147,7 +147,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private boolean cacheBeanMetadata = true;
 
 	/** Resolution strategy for expressions in bean definition values. */
-	// bean定义值中表达式的解析策略。
+	// bean 定义值中表达式的解析策略。
 	@Nullable
 	private BeanExpressionResolver beanExpressionResolver;
 
@@ -197,6 +197,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
 
 	/** Names of beans that are currently in creation. */
+	// 当前正在创建的bean的名称。
 	private final ThreadLocal<Object> prototypesCurrentlyInCreation =
 			new NamedThreadLocal<>("Prototype beans currently in creation");
 
@@ -297,21 +298,17 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 			//返回对应的实例，有时候存在诸如 BeanFactory 的情况并不是直接返回实例本身而是返回指定方法返回的实例
 			//3.bean 的实例化
-			//如果从缓存中得到了bean 的原始状态，则需要对 bean 进行实例化。
+			// 如果从缓存中得到了bean 的原始状态，则需要对 bean 进行实例化。
 			// 这里有必要强调一下缓存中记录的只是最原始的 bean 状态，并不一定是我们最终想要的 bean。
-			// 举个例子，假如我们需要对工广 bean 进行处理，那么这里得到的其实是工厂 bean 的初始状态，
+			// 举个例子，假如我们需要对工厂 bean 进行处理，那么这里得到的其实是工厂 bean 的初始状态，
 			// 但是我们真正需要的是工厂 bean 中定义的 factory-method 方法中返回的 bean，
 			// 而 getObjectForBeanInstance就是完成这个工作的，后续会详细讲解。
 			// 在getBean 方法中，getObjectForBeanInstance 是个高频率使用的方法，无论是从缓存中获得 bean
-			// 还是根据不同的 scope 策略加载 bean。总之，我们得到 bean 的实例后要做的第步就是调用这个方法来检测一下正确性，
+			// 还是根据不同的 scope 策略加载 bean。总之，我们得到 bean 的实例后要做的第一步就是调用这个方法来检测一下正确性，
 			// 其实就是用于检测当前 bean 是否是 FactoryBear类型的 bean，
 			// 如果是，那么需要调用该 bean 对应的 FactoryBean 实例中的 getObject()作为返回值。
-			// 无论是从缓存中获取到的bean还是通过不同的scope策略加载的 bean都只是最原始的 bean状态，并不一定是我们最终想要的 bean。
-			// 举个例子，假如我们需要对工厂 bean 进行处理，那么这里得到的其实是工厂 bean 的初始状态，但是我们真正需要的是工厂 bean
-			// 中定义的factory-method方法中返的 bean，而 getObjectForBeanInstance 方法就是完成这个工作的。
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
-
 		else {
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
@@ -411,6 +408,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							// Explicitly remove instance from singleton cache: It might have been put there
 							// eagerly by the creation process, to allow for circular reference resolution.
 							// Also remove any beans that received a temporary reference to the bean.
+							// 从单例缓存中显式删除实例：创建过程可能会急切地将实例放在那里，以允许循环引用解析。
+							// 还要移除任何接收到对bean的临时引用的bean。
 							destroySingleton(beanName);
 							throw ex;
 						}
@@ -525,6 +524,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 
 		// In case of FactoryBean, return singleton status of created object if not a dereference.
+		// 在FactoryBean的情况下，如果不是取消引用，则返回已创建对象的singleton状态。
 		if (mbd.isSingleton()) {
 			if (isFactoryBean(beanName, mbd)) {
 				if (BeanFactoryUtils.isFactoryDereference(name)) {
@@ -549,6 +549,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		BeanFactory parentBeanFactory = getParentBeanFactory();
 		if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 			// No bean definition found in this factory -> delegate to parent.
+			// 在这个工厂中找不到bean定义->委托给父级。
 			return parentBeanFactory.isPrototype(originalBeanName(name));
 		}
 
@@ -1466,6 +1467,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Let's correct this on the fly here, since this might be the result of
 				// parent-child merging for the outer bean, in which case the original inner bean
 				// definition will not have inherited the merged outer bean's singleton status.
+				// 非单例bean中包含的bean本身不能是单例。让我们在这里立即纠正这一点，因为这可能是外部bean的父子
+				// 合并的结果，在这种情况下，原始内部bean定义将不会继承合并后的外部bean的singleton状态。
 				if (containingBd != null && !containingBd.isSingleton() && mbd.isSingleton()) {
 					mbd.setScope(containingBd.getScope());
 				}

@@ -55,18 +55,21 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	/**
 	 * Index in the CGLIB callback array for passthrough behavior,
 	 * in which case the subclass won't override the original class.
+	 * 用于传递行为的CGLIB回调数组中的索引，在这种情况下，子类不会覆盖原始类。
 	 */
 	private static final int PASSTHROUGH = 0;
 
 	/**
 	 * Index in the CGLIB callback array for a method that should
 	 * be overridden to provide <em>method lookup</em>.
+	 * CGLIB回调数组中某个方法的索引，该方法应被重写以提供方法查找。
 	 */
 	private static final int LOOKUP_OVERRIDE = 1;
 
 	/**
 	 * Index in the CGLIB callback array for a method that should
 	 * be overridden using generic <em>method replacer</em> functionality.
+	 * CGLIB回调数组中应使用通用方法替换器功能重写的方法的索引。
 	 */
 	private static final int METHOD_REPLACER = 2;
 
@@ -88,6 +91,7 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	/**
 	 * An inner class created for historical reasons to avoid external CGLIB dependency
 	 * in Spring versions earlier than 3.2.
+	 * 由于历史原因创建的内部类，以避免3.2之前的Spring版本中的外部CGLIB依赖。
 	 */
 	private static class CglibSubclassCreator {
 
@@ -161,6 +165,8 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	 * Class providing hashCode and equals methods required by CGLIB to
 	 * ensure that CGLIB doesn't generate a distinct class per bean.
 	 * Identity is based on class and bean definition.
+	 * 类，提供CGLIB所需的hashCode和equals方法，以确保CGLIB不会为每个bean生成不同的类。
+	 * 标识是基于类和bean定义的。
 	 */
 	private static class CglibIdentitySupport {
 
@@ -189,6 +195,7 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 
 	/**
 	 * CGLIB callback for filtering method interception behavior.
+	 * 用于筛选方法拦截行为的CGLIB回调。
 	 */
 	private static class MethodOverrideCallbackFilter extends CglibIdentitySupport implements CallbackFilter {
 
@@ -222,6 +229,8 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	/**
 	 * CGLIB MethodInterceptor to override methods, replacing them with an
 	 * implementation that returns a bean looked up in the container.
+	 *
+	 * CGLIB MethodInterceptor重写方法，用返回在容器中查找的bean的实现替换它们。
 	 */
 	private static class LookupOverrideMethodInterceptor extends CglibIdentitySupport implements MethodInterceptor {
 
@@ -253,6 +262,8 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	/**
 	 * CGLIB MethodInterceptor to override methods, replacing them with a call
 	 * to a generic MethodReplacer.
+	 *
+	 * CGLIB MethodInterceptor重写方法，用对泛型MethodReplacer的调用替换它们。
 	 */
 	private static class ReplaceOverrideMethodInterceptor extends CglibIdentitySupport implements MethodInterceptor {
 
