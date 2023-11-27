@@ -558,8 +558,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * populates the bean instance, applies post-processors, etc.
 	 *
 	 * 1、根据设置的 class 属性或者根据 className 来解析 Class。
-	 * 2.对override 属性进行标记及验证。
-	 * 很多读者可能会不知道这个方法的作用，因为在 Spring 的配置里面根本就没有诸如override-method 之类的配置，那么这个方法到底是干什么用的呢?
+	 * 2.对 override 属性进行标记及验证。
+	 * 很多读者可能会不知道这个方法的作用，因为在 Spring 的配置里面根本就没有诸如 override-method 之类的配置，
+	 * 那么这个方法到底是干什么用的呢?
 	 * 其实在 Spring 中确实没有 override-method 这样的配置，但是如果读过前面的部分，可能会有所发现，
 	 * 在 Spring 配置中是存在 lookup-method 和 replace-method 的，而这两个配置的加载其实就是将配置统一存放在 BeanDefinition
 	 * 中的 methodOverrides 属性里，而这个函数的操作其实也就是针对于这两个配置的。
@@ -752,7 +753,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 但是在 AbstractRefreshableApplicationContext 中提供了设置函数，
 		// 可以通过硬编码的方式进行设置或者可以通过自定义命名空间进行配置，其中硬编码的方式代码如下。
 		// ClassPathXmlApplicationContext bf = new ClassPathXmlApplicationContext ("aspectTest.xml") ;
-		// bf.setAllowBeanDefinitionOverridinq(false);
+		// bf.setAllowBeanDefinitionOverriding(false);
 
 		// isSingletonCurrentlyInCreation(beanName):该 bean 是否在创建中。
 		//

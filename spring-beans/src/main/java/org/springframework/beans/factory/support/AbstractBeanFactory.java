@@ -182,7 +182,24 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private volatile boolean hasDestructionAwareBeanPostProcessors;
 
 	/** Map from scope identifier String to corresponding Scope. */
-	// 从作用域标识符String映射到相应的作用域。
+	// 从作用域标识符String映射到相应的作用域。scope 有如下实现类：当前scope内的bean 不会保存在
+	// DefaultSingletonBeanRegistry 内的org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.singletonObjects 容器中。
+	// 1、ServletContextScope:Bean放置在 org.springframework.web.context.support.ServletContextScope.servletContext 的
+	// ConcurrentMap<String, Object> attributes 容器中。
+	// 2、RequestScope和SessionScope:是org.springframework.web.context.request.AbstractRequestAttributesScope的子类，
+	// 两者没有区别，都是把 BeanFactory 存放于 RequestAttributes 属性中，在同一个Request和Session，都是获取同一个bean实例。
+	// 不同Request和Session，就通过 BeanFactory重新创建Bean实例。
+	// 4、SimpleMapScope: bean的生命周期存在于指定的HashMap容器，通过synchronized保证线程安全操作。
+	// Bean 在不同 SimpleMapScope 对象内是不同的实例.
+	// 5、SimpleThreadScope:bean的生命周期存在于当前线程，通过当前线程的ThreadLocal
+	// 存储Bean实例，可线程安全操作。Bean 在不同线程内是不同的实例。
+	// 6、SimpleTransactionScope: bean的生命周期存在于当前事务，通过当前事务的ThreadLocal
+	// 存储Bean实例，可线程安全操作。Bean 在不同事务内是不同的实例。
+
+	// singleton、prototype 是没有对应的 Scope实现。
+    // singleton 的bean是保存在DefaultSingletonBeanRegistry 内的
+	// org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.singletonObjects 容器中。
+	// prototype 是没有容器缓存，每次创建都是新的bean实例。
 	private final Map<String, Scope> scopes = new LinkedHashMap<>(8);
 
 	/** Security context used when running with a SecurityManager. */
@@ -437,6 +454,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 						throw new IllegalStateException("No Scope registered for scope name '" + scopeName + "'");
 					}
 					try {
+						// 这里 scope 实例有如下：
+						// ServletContextScope、RequestScope、SessionScope、SimpleMapScope、SimpleThreadScope、SimpleTransactionScope
 						Object scopedInstance = scope.get(beanName, () -> {
 							beforePrototypeCreation(beanName);
 							try {
