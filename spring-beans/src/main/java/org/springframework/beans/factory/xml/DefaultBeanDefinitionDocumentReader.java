@@ -151,10 +151,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			//...
 			//</beans>
 			//集成到Web环境中时，在web.xml中加入以下代码：
-			//<comtext-param>
+			//<context-param>
 			//  <param-name> Spring.profiles.active</param-name>
 			//  <param-value> dev</param-value>
-			//</comtext-param>
+			//</context-param>
 			//有了这个特性我们就可以同时在配置文件中部署两套配置来适用于生产环境和开发环境，
 			//这样可以方便的进行切换开发、部署环境，最常用的就是更换不同的数据库。
 

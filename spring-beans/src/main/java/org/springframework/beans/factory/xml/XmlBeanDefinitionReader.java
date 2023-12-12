@@ -357,7 +357,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	@Override
 	public int loadBeanDefinitions(Resource resource) throws BeanDefinitionStoreException {
 		//用EncodedResource 封装resource
-		//这个类主要是用于对资服文件的编码进行处理的。其中的主要逻辑体现在 getRead()方法中， 当设置了编码属性
+		//这个类主要是用于对资源文件的编码进行处理的。其中的主要逻辑体现在 getRead()方法中， 当设置了编码属性
 		//的时候 Spring 会使用相应的编码作为输入流的编码
 		return loadBeanDefinitions(new EncodedResource(resource));
 	}

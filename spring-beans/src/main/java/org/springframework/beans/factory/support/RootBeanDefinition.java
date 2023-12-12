@@ -65,6 +65,35 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	@Nullable
 	private BeanDefinitionHolder decoratedDefinition;
 
+	/**
+	 * 这个接口（AnnotatedElement）的对象代表了在当前JVM中的一个“被注解元素”
+	 * （可以是Class，Method，Field，Constructor，Package等）。
+	 * 在Java语言中，所有实现了这个接口的“元素”都是可以“被注解的元素”。
+	 * 使用这个接口中声明的方法可以读取（通过Java的反射机制）“被注解元素”的注解。
+	 * 这个接口中的所有方法返回的注解都是不可变的、并且都是可序列化的。
+	 * 这个接口中所有方法返回的数组可以被调用者修改，而不会影响其返回给其他调用者的数组。
+	 *
+	 * 子接口
+	 * AnnotatedArrayType （被注解的数组类型）
+	 * AnnotatedParameterizedType （被注解的参数化类型）
+	 * AnnotatedType （被注解的类型）
+	 * AnnotatedTypeVariable （被注解的类型变量）
+	 * AnnotatedWildcardType （被注解的通配类型）
+	 * GenericDeclaration （通用声明，用于表示声明型元素，如：类、方法、构造器等）
+	 * TypeVariable<D> （类型变量）
+	 *
+	 * 实现类
+	 * AccessibleObject（可访问对象，如：方法、构造器、属性等）
+	 * Class（类，就是你用Java语言编程时每天都要写的那个东西）
+	 * Constructor（构造器，类的构造方法的类型）
+	 * Executable（可执行的，如构造器和方法）
+	 * Field（属性，类中属性的类型）
+	 * Method（方法，类中方法的类型）
+	 * Package（包，你每天都在声明的包的类型）
+	 * Parameter（参数，主要指方法或函数的参数，其实是这些参数的类型）
+	 * getAnnotationsByType(Class)和getDeclaredAnnotationsByType(Class)方法在一个元素上支持多个相同类型的注释。
+	 *
+	 */
 	@Nullable
 	private AnnotatedElement qualifiedElement;
 

@@ -102,8 +102,8 @@ import org.springframework.util.StringValueResolver;
  * {@link DefaultListableBeanFactory} and {@link AbstractAutowireCapableBeanFactory}.
  *
  * BeanFactory 实现的抽象基类，提供可配置BeanFactor SPI的全部功能。
- * 不假设有一个可列出的bean工厂：因此也可以用作bean工厂实现的基类，这些实现从一些后端资源获取bean定义
- * （其中bean定义访问是一项昂贵的操作）。 这个类提供了一个单例缓存（通过其基类DefaultSingletonBeanRegistry、
+ * 不是假设一个可列出的bean工厂吗：因此也可以用作bean工厂实现的基类，该实现从一些后端资源获得bean定义（其中bean定义访问是一个昂贵的操作）。
+ * 这个类提供了一个单例缓存（通过其基类DefaultSingletonBeanRegistry、
  * 单例/原型确定、FactoryBean处理、别名、子bean定义的bean定义合并以及bean销毁
  * （org.springframework.beans.factory.DisposableBean接口、自定义销毁方法）。
  * 此外，它可以通过实现org.springframework.beans.factory来管理bean工厂层次结构
@@ -1416,10 +1416,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	/**
 	 * Return a RootBeanDefinition for the given bean, by merging with the
 	 * parent if the given bean's definition is a child bean definition.
+	 *
+	 * 如果给定bean的定义是子bean定义，则通过与父bean合并，返回给定bean的RootBeanDefinition。
+	 *
 	 * @param beanName the name of the bean definition
 	 * @param bd the original bean definition (Root/ChildBeanDefinition)
 	 * @param containingBd the containing bean definition in case of inner bean,
-	 * or {@code null} in case of a top-level bean
+	 * or {@code null} in case of a top-level bean 如果是内部 bean，则包含bean定义，如果是顶层 bean，则为{@code-null}
 	 * @return a (potentially merged) RootBeanDefinition for the given bean
 	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
 	 */
@@ -1993,8 +1996,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * instance itself or its created object in case of a FactoryBean.
 	 *
 	 * 在getBean 方法中，getObjectForBeanInstance 是个高频率使用的方法，无论是从缓存中获得 bean
-	 * 还是根据不同的 scope 策略加载 bean。总之，我们得到 bean 的实例后要做的第步就是调用这个方法来检测一下正确性，
-	 * 其实就是用于检测当前 bean 是否是 FactoryBear类型的 bean，
+	 * 还是根据不同的 scope 策略加载 bean。总之，我们得到 bean 的实例后要做的第一步就是调用这个方法来检测一下正确性，
+	 * 其实就是用于检测当前 bean 是否是 FactoryBean类型的 bean，
 	 * 如果是，那么需要调用该 bean 对应的 FactoryBean 实例中的 getObject()作为返回值。
 	 * 无论是从缓存中获取到的bean还是通过不同的scope策略加载的 bean都只是最原始的 bean状态，并不一定是我们最终想要的 bean。
 	 * 举个例子，假如我们需要对工厂 bean 进行处理，那么这里得到的其实是工厂 bean 的初始状态，但是我们真正需要的是工厂 bean

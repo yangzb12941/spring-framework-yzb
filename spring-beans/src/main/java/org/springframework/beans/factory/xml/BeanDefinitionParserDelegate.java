@@ -624,7 +624,7 @@ public class BeanDefinitionParserDelegate {
 			//   TestChangeMethod test = (TestChangeMethod)bf.getBean("testChangeMethod")；
 			//   test.changeMe();
 			//}
-			// 控制台成功打印刷“我替换了原有的方法”.
+			// 控制台成功打印“我替换了原有的方法”.
 			// 原理：就是AOP切面的方式。生成 TestChangeMethod 的动态代理，对方法changeMe进行织入。
 			parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
 

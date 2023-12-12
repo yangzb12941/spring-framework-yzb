@@ -62,29 +62,34 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	/**
 	 * Constant for the default scope name: {@code ""}, equivalent to singleton
 	 * status unless overridden from a parent bean definition (if applicable).
+	 * 默认作用域名称的常量：｛@code ""｝，等效于singleton状态，除非从父bean定义重写（如果适用）。
 	 */
 	public static final String SCOPE_DEFAULT = "";
 
 	/**
 	 * Constant that indicates no external autowiring at all.
 	 * @see #setAutowireMode
+	 * 表示根本没有外部自动布线的常数 @请参阅setAutowireMode
 	 */
 	public static final int AUTOWIRE_NO = AutowireCapableBeanFactory.AUTOWIRE_NO;
 
 	/**
 	 * Constant that indicates autowiring bean properties by name.
+	 * 通过名称指示自动连接bean属性的常量。
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_NAME = AutowireCapableBeanFactory.AUTOWIRE_BY_NAME;
 
 	/**
 	 * Constant that indicates autowiring bean properties by type.
+	 * 按类型指示自动连接bean属性的常量。
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_TYPE = AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE;
 
 	/**
 	 * Constant that indicates autowiring a constructor.
+	 * 指示自动连接构造函数的常量
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_CONSTRUCTOR = AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR;
@@ -92,6 +97,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	/**
 	 * Constant that indicates determining an appropriate autowire strategy
 	 * through introspection of the bean class.
+	 * 常数，指示通过对bean类的内省来确定适当的autowire策略。
 	 * @see #setAutowireMode
 	 * @deprecated as of Spring 3.0: If you are using mixed autowiring strategies,
 	 * use annotation-based autowiring for clearer demarcation of autowiring needs.
@@ -101,18 +107,21 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	/**
 	 * Constant that indicates no dependency check at all.
+	 * 常数，表示根本没有相关性检查。
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_NONE = 0;
 
 	/**
 	 * Constant that indicates dependency checking for object references.
+	 * 指示对象引用的依赖项检查的常量。
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_OBJECTS = 1;
 
 	/**
 	 * Constant that indicates dependency checking for "simple" properties.
+	 * 指示“简单”属性的依赖项检查的常量。
 	 * @see #setDependencyCheck
 	 * @see org.springframework.beans.BeanUtils#isSimpleProperty
 	 */
@@ -121,6 +130,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	/**
 	 * Constant that indicates dependency checking for all properties
 	 * (object references as well as "simple" properties).
+	 * 常数，指示所有属性（对象引用和“简单”属性）的依赖关系检查。
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_ALL = 3;
@@ -134,6 +144,12 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * name.
 	 * <p>Currently, the method names detected during destroy method inference
 	 * are "close" and "shutdown", if present on the specific bean class.
+	 *
+	 * 常数，指示容器应尝试推断bean的｛@link setDestroyMethodName destroy method name｝，
+	 * 而不是显式指定方法名称。值｛@value｝专门设计用于在方法名称中包含非法字符，
+	 * 从而确保与具有相同名称的合法命名方法不发生冲突<p> 目前，
+	 * 在destroy方法推断过程中检测到的方法名称是“close”和“shutdown”，
+	 * 如果存在于特定的bean类中的话。
 	 */
 	public static final String INFER_METHOD = "(inferred)";
 
@@ -217,8 +233,10 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String destroyMethodName;
 
+	//强制执行Init方法
 	private boolean enforceInitMethod = true;
 
+	//强制销毁方法
 	private boolean enforceDestroyMethod = true;
 
 	//是否用户定义的而不是应用程序本身定义的，创建AOP时候为true，程序设置
@@ -327,6 +345,12 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * {@code initMethodName}, and {@code destroyMethodName} if specified
 	 * in the given bean definition.
 	 * </ul>
+	 *
+	 * 从给定的bean定义（可能是子定义）重写该bean定义中的设置（可能是父子继承关系中复制的父定义）。
+	 * 如果在给定的bean定义中指定，将覆盖beanClass。 将始终从给定的bean定义中获取abstract、
+	 * scope、lazyUnit、autowireMode、dependencyCheck和dependensOn。
+	 * 将把给定bean定义中的constructorArgumentValues、propertyValues、methodOverrides添加到现有定义中。
+	 * 如果在给定的bean定义中指定，将覆盖factoryBeanName、factoryMethodName、initMethodName和destroyMethodName。
 	 */
 	public void overrideFrom(BeanDefinition other) {
 		if (StringUtils.hasLength(other.getBeanClassName())) {

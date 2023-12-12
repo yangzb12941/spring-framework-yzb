@@ -27,6 +27,13 @@ package org.springframework.beans.factory;
  * custom destroy method, for example in an XML bean definition. For a list of all
  * bean lifecycle methods, see the {@link BeanFactory BeanFactory javadocs}.
  *
+ * 要由希望在销毁时释放资源的bean实现的接口。
+ * BeanFactory将在单独销毁作用域bean时调用destroy方法。
+ * org.springframework.context.ApplicationContext应该在关闭时处理其所有singleton，
+ * 这是由应用程序生命周期驱动的。 出于同样的目的，Spring托管bean也可以实现Java的AutoCloseable接口。
+ * 实现接口的另一种方法是指定自定义销毁方法，例如在XML bean定义中。有关所有bean生命周期方法的列表，
+ * 请参阅BeanFactory java docs。
+ *
  * @author Juergen Hoeller
  * @since 12.08.2003
  * @see InitializingBean
