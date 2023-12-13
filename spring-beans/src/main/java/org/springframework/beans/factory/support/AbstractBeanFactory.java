@@ -322,7 +322,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			// 而 getObjectForBeanInstance就是完成这个工作的，后续会详细讲解。
 			// 在getBean 方法中，getObjectForBeanInstance 是个高频率使用的方法，无论是从缓存中获得 bean
 			// 还是根据不同的 scope 策略加载 bean。总之，我们得到 bean 的实例后要做的第一步就是调用这个方法来检测一下正确性，
-			// 其实就是用于检测当前 bean 是否是 FactoryBear类型的 bean，
+			// 其实就是用于检测当前 bean 是否是 FactoryBean类型的 bean，
 			// 如果是，那么需要调用该 bean 对应的 FactoryBean 实例中的 getObject()作为返回值。
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
