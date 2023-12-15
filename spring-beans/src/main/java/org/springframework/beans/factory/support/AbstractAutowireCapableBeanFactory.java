@@ -1679,7 +1679,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * Populate the bean instance in the given BeanWrapper with the property values
 	 * from the bean definition.
 	 *
-	 * 用bean定义中的属性值填充给定BeanDrapper中的bean实例。
+	 * 用bean定义中的属性值填充给定BeanWrapper中的bean实例。
 	 *
 	 * 在populateBean函数中提供了这样的处理流程。
 	 * 1.InstantiationAwareBeanPostProcessor 处理器的 postProcessAfterInstantiation 函数的应用

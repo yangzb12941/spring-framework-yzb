@@ -70,6 +70,8 @@ public class DummyFactory
 
 	private TestBean otherTestBean;
 
+	private FactoryBean factoryBean;
+
 
 	public DummyFactory() {
 		this.testBean = new TestBean();
@@ -127,6 +129,14 @@ public class DummyFactory
 
 	public TestBean getOtherTestBean() {
 		return otherTestBean;
+	}
+
+	public FactoryBean getFactoryBean() {
+		return this.factoryBean;
+	}
+
+	public void setFactoryBean(FactoryBean factoryBean) {
+		this.factoryBean = factoryBean;
 	}
 
 	@Override

@@ -930,7 +930,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	/**
 	 * 1.对AbstractBeanDefinition的校验。在解析XML文件的时候我们提过校验，但是此校验
-	 * 非彼校验，之前的校验时针对于XML格式的校验，而此时的校验时针是对于AbstractBean-
+	 * 非彼校验，之前的校验是针对于XML格式的校验，而此时的校验时针是对于AbstractBean-
 	 * Definition的methodOverrides属性的
 	 * 2、对beanName已经注册的情况的处理。如果设置了不允许bean的覆盖，则需要抛出
 	 * 异常，否则直接覆盖。

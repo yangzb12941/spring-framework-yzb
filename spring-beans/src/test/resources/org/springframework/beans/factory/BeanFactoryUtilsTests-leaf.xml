@@ -8,5 +8,15 @@
 		<property name="age"><value>25</value></property>
 	</bean>
 
-</beans>	
+	<bean id="test4" class="org.springframework.tests.sample.beans.TestBean" scope="prototype">
+		<property name="name"><value>custom</value></property>
+		<property name="age"><value>25</value></property>
+	</bean>
+
+	<bean id="test5" class="org.springframework.tests.sample.beans.TestBean" scope="singleton">
+		<property name="name"><value>custom</value></property>
+		<property name="age"><value>25</value></property>
+		<property name="spouse" ref="test4"/>
+	</bean>
+</beans>
 

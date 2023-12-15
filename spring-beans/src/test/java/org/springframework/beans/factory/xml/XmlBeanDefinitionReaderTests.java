@@ -51,8 +51,11 @@ public class XmlBeanDefinitionReaderTests {
 	public void withOpenInputStream() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		Resource resource = new InputStreamResource(getClass().getResourceAsStream("test.xml"));
-		assertThatExceptionOfType(BeanDefinitionStoreException.class).isThrownBy(() ->
-				new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource));
+		assertThatExceptionOfType(BeanDefinitionStoreException.class).isThrownBy(() ->{
+			XmlBeanDefinitionReader xmlBeanDefinitionReader = new XmlBeanDefinitionReader(registry);
+			xmlBeanDefinitionReader.setValidationMode(XmlBeanDefinitionReader.VALIDATION_DTD);
+			xmlBeanDefinitionReader.loadBeanDefinitions(resource);
+		});
 	}
 
 	@Test

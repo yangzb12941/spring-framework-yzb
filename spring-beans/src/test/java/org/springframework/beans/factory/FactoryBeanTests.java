@@ -48,7 +48,7 @@ public class FactoryBeanTests {
 
 
 	@Test
-	public void testFactoryBeanReturnsNull() throws Exception {
+	public void testBeanFactoryUtilsTestsLeaf() throws Exception {
 		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
 		new XmlBeanDefinitionReader(factory).loadBeanDefinitions(RETURNS_NULL_CONTEXT);
 

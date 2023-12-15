@@ -89,7 +89,7 @@ public abstract class AopNamespaceUtils {
 	}
 
 	/**
-	 * useClassProxyingIfNecessary 现了 proxy-target-class 属性以及expose-proxy 属性的处理
+	 * useClassProxyingIfNecessary 实现了 proxy-target-class 属性以及expose-proxy 属性的处理
 	 *
 	 * proxy-target-class: SpringAOP 部分使用JDK动态代理或者 CGLIB 来为目标对象创建代理(建议尽量使用JDK 的动态代理)。
 	 * 如果被代理的目标对象实现了至少一个接口，则会使用JDK 动态代理。所有该目标类型实现的接口都将被代理。
