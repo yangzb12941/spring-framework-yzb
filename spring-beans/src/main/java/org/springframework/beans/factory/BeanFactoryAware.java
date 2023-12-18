@@ -30,6 +30,22 @@ import org.springframework.beans.BeansException;
  * <p>For a list of all bean lifecycle methods, see the
  * {@link BeanFactory BeanFactory javadocs}.
  *
+ * 这个类只有一个触发点，发生在bean的实例化之后，注入属性之前，也就是Setter之前。
+ * 这个类的扩展点方法为setBeanFactory，可以拿到BeanFactory这个属性。
+ *
+ * 使用场景为:
+ *    你可以在 bean 实例化之后，但还未初始化之前，拿到 BeanFactory，在这个时候，
+ *    可以对每个bean作特殊化的定制。也或者可以把BeanFactory拿到进行缓存，日后使用。
+ *
+ * 扩展方式为：
+ *
+ * public class TestBeanFactoryAware implements BeanFactoryAware {
+ *     @Override
+ *     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+ *         System.out.println("[TestBeanFactoryAware] " + beanFactory.getBean(TestBeanFactoryAware.class).getClass().getSimpleName());
+ *     }
+ * }
+ *
  * @author Rod Johnson
  * @author Chris Beams
  * @since 11.03.2003

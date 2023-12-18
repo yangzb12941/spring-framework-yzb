@@ -21,6 +21,9 @@ import org.springframework.context.ApplicationContext;
 /**
  * Event raised when an {@code ApplicationContext} gets stopped.
  *
+ * 当使用 ConfigurableApplicationContext 接口中的 stop() 停止 ApplicationContext 时，
+ * 发布这个事件。你可以在接受到这个事件后做必要的清理的工作
+ *
  * @author Mark Fisher
  * @author Juergen Hoeller
  * @since 2.5

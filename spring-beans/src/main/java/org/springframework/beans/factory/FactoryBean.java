@@ -82,6 +82,43 @@ import org.springframework.lang.Nullable;
  * 这时Spring 容器就调用接口方法 CarFactoryBean#getObject()方法返回。
  * 如果希望获取CarFactoryBean 的实例，则需要在使用 getBean(beanName) 方法时在 beanName前显示的加上"&”前缀，例如 getBean("&car")。
  *
+ *
+ * 一般情况下，Spring 通过反射机制利用 bean 的 class 属性指定支线类去实例化 bean，
+ * 在某些情况下，实例化 Bean 过程比较复杂，如果按照传统的方式，则需要在 bean 中提供大量的配置信息。
+ * 配置方式的灵活性是受限的，这时采用编码的方式可能会得到一个简单的方案。
+ * Spring为此提供了一个 org.springframework.bean.factory.FactoryBean 的工厂类接口，
+ * 用户可以通过实现该接口定制实例化 Bean 的逻辑。FactoryBean 接口对于 Spring 框架来说占用重要的地位，
+ * Spring自身就提供了70多个 FactoryBean 的实现。它们隐藏了实例化一些复杂 bean 的细节，
+ * 给上层应用带来了便利。从 Spring3.0 开始，FactoryBean 开始支持泛型，即接口声明改为 FactoryBean<T> 的形式
+ *
+ * 使用场景：用户可以扩展这个类，来为要实例化的bean作一个代理，比如为该对象的所有的方法作一个拦截，在调用前后输出一行log，
+ * 模仿 ProxyFactoryBean 的功能。
+ *
+ * 扩展方式为：
+ *
+ * public class TestFactoryBean implements FactoryBean<TestFactoryBean.TestFactoryInnerBean> {
+ *
+ *     @Override
+ *     public TestFactoryBean.TestFactoryInnerBean getObject() throws Exception {
+ *         System.out.println("[FactoryBean] getObject");
+ *         return new TestFactoryBean.TestFactoryInnerBean();
+ *     }
+ *
+ *     @Override
+ *     public Class<?> getObjectType() {
+ *         return TestFactoryBean.TestFactoryInnerBean.class;
+ *     }
+ *
+ *     @Override
+ *     public boolean isSingleton() {
+ *         return true;
+ *     }
+ *
+ *     public static class TestFactoryInnerBean{
+ *
+ *     }
+ * }
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 08.03.2003

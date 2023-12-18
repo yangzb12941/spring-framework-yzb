@@ -29,6 +29,10 @@ import java.util.EventListener;
  * {@code ApplicationContext}, events will be filtered accordingly, with the
  * listener getting invoked for matching event objects only.
  *
+ * 准确的说，这个应该不算 spring 当中的一个扩展点，ApplicationListener 可以监听某个事件的event，
+ * 触发时机可以穿插在业务方法执行过程中，用户可以自定义某个业务事件。但是 spring 内部也有一些内置事件，
+ * 这种事件，可以穿插在启动调用中。我们也可以利用这个特性，来自己做一些内置事件的监听器来达到和前面一些触发点大致相同的事情。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @param <E> the specific {@code ApplicationEvent} subclass to listen to

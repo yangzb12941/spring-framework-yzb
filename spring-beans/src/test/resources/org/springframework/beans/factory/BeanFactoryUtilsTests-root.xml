@@ -21,7 +21,6 @@
 	<bean id="testFactory1" class="org.springframework.tests.sample.beans.factory.DummyFactory"/>
 
 	<bean id="testFactory3" class="org.springframework.tests.sample.beans.factory.DummyFactory">
-		<property name="factoryBean" ref = "testFactory2"/>
 	</bean>
 
 	<bean id="testFactory2" class="org.springframework.tests.sample.beans.factory.DummyFactory">

@@ -27,7 +27,27 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
  * which in turn define BeanFactoryPostProcessor instances.
  *
  * 标准BeanFactoryPostProcessor SPI的扩展，允许在常规BeanFactoryPost处理器检测开始之前注册更多的bean定义。
- * 特别是，BeanDefinitionRegistryPostProcessor可以注册更多的bean定义，这些bean定义反过来定义BeanFactoryPostProcessor实例。
+ * 特别是，BeanDefinitionRegistryPostProcessor 可以注册更多的bean定义，
+ * 这些bean定义反过来定义BeanFactoryPostProcessor实例。
+ *
+ * 这个接口在读取项目中的beanDefinition之后执行，提供一个补充的扩展点
+ *
+ * 使用场景：你可以在这里动态注册自己的 beanDefinition，可以加载classpath之外的bean
+ *
+ * 扩展方式为:
+ *
+ * public class TestBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor {
+ *     @Override
+ *     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+ *         System.out.println("[BeanDefinitionRegistryPostProcessor] postProcessBeanDefinitionRegistry");
+ *     }
+ *
+ *     @Override
+ *     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+ *         System.out.println("[BeanDefinitionRegistryPostProcessor] postProcessBeanFactory");
+ *     }
+ * }
+ *
  * @author Juergen Hoeller
  * @since 3.0.1
  * @see org.springframework.context.annotation.ConfigurationClassPostProcessor

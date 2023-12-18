@@ -34,6 +34,18 @@ package org.springframework.beans.factory;
  * 实现接口的另一种方法是指定自定义销毁方法，例如在XML bean定义中。有关所有bean生命周期方法的列表，
  * 请参阅BeanFactory java docs。
  *
+ * 这个扩展点也只有一个方法：destroy()，其触发时机为当此对象销毁时，会自动执行这个方法。
+ * 比如说运行 applicationContext.registerShutdownHook 时，就会触发这个方法。
+ *
+ * 扩展方式为：
+ *
+ * public class NormalBeanA implements DisposableBean {
+ *     @Override
+ *     public void destroy() throws Exception {
+ *         System.out.println("[DisposableBean] NormalBeanA");
+ *     }
+ * }
+ *
  * @author Juergen Hoeller
  * @since 12.08.2003
  * @see InitializingBean

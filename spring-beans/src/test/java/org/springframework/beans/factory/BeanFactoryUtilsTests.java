@@ -49,6 +49,7 @@ public class BeanFactoryUtilsTests {
 
 	private static final Class<?> CLASS = BeanFactoryUtilsTests.class;
 	private static final Resource ROOT_CONTEXT = qualifiedResource(CLASS, "root.xml");
+	private static final Resource LOOP_REF = qualifiedResource(CLASS, "loopRef.xml");
 	private static final Resource MIDDLE_CONTEXT = qualifiedResource(CLASS, "middle.xml");
 	private static final Resource LEAF_CONTEXT = qualifiedResource(CLASS, "leaf.xml");
 	private static final Resource DEPENDENT_BEANS_CONTEXT = qualifiedResource(CLASS, "dependentBeans.xml");
@@ -58,7 +59,7 @@ public class BeanFactoryUtilsTests {
 	private DefaultListableBeanFactory dependentBeansFactory;
 
 
-	@BeforeEach
+	//@BeforeEach
 	public void setUp() {
 		// Interesting hierarchical factory to test counts.
 		// Slow to read so we cache it.
@@ -101,11 +102,12 @@ public class BeanFactoryUtilsTests {
 		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
 		//new XmlBeanDefinitionReader(factory).loadBeanDefinitions(LEAF_CONTEXT);
 
-		new XmlBeanDefinitionReader(factory).loadBeanDefinitions(ROOT_CONTEXT);
+		new XmlBeanDefinitionReader(factory).loadBeanDefinitions(LOOP_REF);
 		//factory.getBean("test3").toString();
 		//factory.getBean("test4").toString();
 		//factory.getBean("test5").toString();
-		//factory.getBean("testFactory3").toString();
+		factory.getBean("beanB").toString();
+		factory.getBean("beanA").toString();
 	}
 
 	@Test

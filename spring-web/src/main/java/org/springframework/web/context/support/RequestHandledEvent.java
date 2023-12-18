@@ -26,6 +26,9 @@ import org.springframework.lang.Nullable;
  * ServletRequestHandledEvent subclass), but can also be raised by any
  * other web component.
  *
+ * 这是一个 web-specific 事件，告诉所有 bean HTTP 请求已经被服务。只能应用于使用 DispatcherServlet 的Web应用。
+ * 在使用 Spring 作为前端的 MVC 控制器时，当 Spring 处理用户请求结束后，系统会自动触发该事件
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since January 17, 2001
