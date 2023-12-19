@@ -144,7 +144,7 @@ public abstract class AopConfigUtils {
 			}
 			return null;
 		}
-
+        // 没有对应在册的 ProxyCreator，注册一个新的
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
 		beanDefinition.setSource(source);
 		beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);

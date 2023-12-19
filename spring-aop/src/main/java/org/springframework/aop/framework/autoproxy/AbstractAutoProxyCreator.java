@@ -294,10 +294,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	@Override
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		if (bean != null) {
-			//根据给定的bean的class和name构建出一个key，格式:beanClassName_beanName
+			// 如果 beanName 不为空则直接使用 beanName（FactoryBean 则使用 &{beanName}），否则使用 bean 的 className
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
-				//如果它合适被代理，则需要封装指定bean
+				// 如果它合适被代理，则需要封装指定bean
+				// 尝试对 bean 进行增强，创建返回增强后的代理对象
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
 		}
@@ -349,7 +350,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 
 		// Create proxy if we have advice.
+		// 获取适用于当前 bean 的 Advisor
 		// 如果存在增强方法则创建代理
+		// AbstractAdvisorAutoProxyCreator#getAdvicesAndAdvisorsForBean
+		// 方法获取适用于当前 bean 的增强器（Advisor），并基于这些增强器调用 AbstractAutoProxyCreator#createProxy
+		// 方法为当前 bean 创建增强后的代理对象。
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		//如果获取到了增强方法则需要针对增强方法创建代理
 		if (specificInterceptors != DO_NOT_PROXY) {

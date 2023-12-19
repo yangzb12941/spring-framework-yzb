@@ -78,7 +78,8 @@ public abstract class AopNamespaceUtils {
 	 */
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-        // 注册或升级 AutoProxyCreator 定义 beanName为org.Springframework.aop.confiq.internalAutoProxyCreator的 BeanDefinition
+        // 注册或升级 AutoProxyCreator 定义 beanName为org.Springframework.aop.confiq.internalAutoProxyCreator 的 BeanDefinition
+		// 1. 注册或更新代理创建器 ProxyCreator 的 BeanDefinition 对象
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
 		//对于proxy-target-class 以及expose-proxy属性的处理
@@ -91,6 +92,8 @@ public abstract class AopNamespaceUtils {
 	/**
 	 * useClassProxyingIfNecessary 实现了 proxy-target-class 属性以及expose-proxy 属性的处理
 	 *
+	 * 其中 proxy-target-class 属性用来配置是否使用 CGLib 代理，而 expose-proxy 属性则用来配置是否对内部方法调用启用 AOP 增强。
+	 *
 	 * proxy-target-class: SpringAOP 部分使用JDK动态代理或者 CGLIB 来为目标对象创建代理(建议尽量使用JDK 的动态代理)。
 	 * 如果被代理的目标对象实现了至少一个接口，则会使用JDK 动态代理。所有该目标类型实现的接口都将被代理。
 	 * 若该目标对象没有实现任何接口，则创建一个 CGLIB 代理。
@@ -101,7 +104,7 @@ public abstract class AopNamespaceUtils {
 	 *
 	 * 与之相比，JDK 本身就提供了动态代理，强制使用 CGLIB代理需要将 <aop:config> 的proxy-target-class 属性设置为true：
 	 * <aop:config proxy-target-class="true">...</aop:config>
-	 * 当需要使用 CGLIB 代理和@AspectJ 自动代理支持，可以按照以下方式设置 <aop:aspectj-auto proxy>的proxy-target-class 属性:
+	 * 当需要使用 CGLIB 代理和@AspectJ 自动代理支持，可以按照以下方式设置 <aop:aspectj-autoproxy>的proxy-target-class 属性:
 	 * <aop:aspectj-autoproxy proxy-target-class="true"/>
 	 * 而实际使用的过程中才会发现细节问题的差别，
 	 * The devil is in the details。
@@ -128,6 +131,7 @@ public abstract class AopNamespaceUtils {
 	 *   }
 	 * }
 	 * 此处的 this 指向目标对象,因此调用 this.b()将不会执行 b 事务切面,即不会执行事务增强。
+	 * 【方法是在对象内部调用的，调用该方法的对象并不是代理对象。】
 	 * 因此 b方法的事务定义“@Transactional(propagation = Propagation.REQUIRES_NEW)”将不会实施，
 	 * 为了解决这个问题，我们可以这样做:
 	 * <aop:aspectj-autoproxy expose-proxy="true"/>
@@ -141,6 +145,13 @@ public abstract class AopNamespaceUtils {
 	 */
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
+			/*
+			 * 获取并处理 proxy-target-class 属性：
+			 * - false 表示使用 java 原生动态代理
+			 * - true 表示使用 CGLib 动态
+			 *
+			 * 但是对于一些没有接口实现的类来说，即使设置为 false 也会使用 CGlib 进行代理
+			 */
 			// 对于 proxy-target-class 属性的处理
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
