@@ -54,7 +54,7 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 	 *
 	 * 如何强制使用 CGLIB 实现 AOP?
 	 * 1、添加 CGLIB 库， Spring_HOME/cglib/*.jar。
-	 * 2、在 Spring 配直文件中加入<aop:aspectj-autoproxy-proxy-target-class＝”true”/>。
+	 * 2、在 Spring 配直文件中加入<aop:aspectj-autoproxy proxy-target-class＝”true”/>。
 	 *
 	 * JDK 动态代理和 CGLIB 字节码生成的区别？
 	 * 1、JDK 动态代理只能对实现了接口的类生成代理，而不能针对类。
@@ -64,7 +64,7 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 	 * 1、创建业务接口，业务对外提供的接口，包含着业务可以对外提供的功能。
 	 * public interface UserService{
 	 *     //目标方法
-	 *     public abstract void add();
+	 *     public void add();
 	 * }
 	 * 2、创建业务接口实现类。
 	 * public class UserServiceImpl implements UserService {
@@ -117,7 +117,7 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 	 * CGLIB 包的底层通过使用一个小而快的字节码处理框架 ASM，来转换字节码并生成新的
 	 * 类。 除了 CGLIB 包，脚本语言例如 Groovy 和 BeanShell，也是使用 ASM 来生成 Java 的字节 码。
 	 * 当然不鼓励直接使用 ASM ， 因为它要求你必须对 JVM 内部结构（包括 class 文件的格式 和指令集） 都很熟悉。
-	 * 
+	 *
 	 * @param config the AOP configuration in the form of an
 	 * AdvisedSupport object
 	 * @return
@@ -132,7 +132,10 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 		// 2、proxyTargetClass ： 这个属性为 true 时， 目标类本身被代理而不是目标类的接口 。 如果这个属性值被设为 true, CGLIB 代理将被创建，
 		// 设直方式为<aop:aspectj-autoproxy-proxy-target-class＝”true”/>。
 		// 3、hasNoUserSuppliedProxyInterfaces：是否存在代理接口 。
-		if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
+		if (config.isOptimize() // 需要对代理策略进行优化
+				|| config.isProxyTargetClass() // 指定使用 CGLib 生成代理对象
+				|| hasNoUserSuppliedProxyInterfaces(config) // 当前类没有接口定义，不得不使用 CGLib
+		) {
 			Class<?> targetClass = config.getTargetClass();
 			if (targetClass == null) {
 				throw new AopConfigException("TargetSource cannot determine target class: " +

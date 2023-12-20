@@ -31,6 +31,17 @@ import org.springframework.util.ReflectionUtils;
  * Objenesis-based extension of {@link CglibAopProxy} to create proxy instances
  * without invoking the constructor of the class. Used by default as of Spring 4.
  *
+ * 基于 CGLib 代理生成增强代理对象的过程位于 ObjenesisCglibAopProxy 类中，
+ * 该类继承自 CglibAopProxy 类。获取 CGLib 代理类对象的方法定义在 CglibAopProxy 中，
+ * 即 CglibAopProxy#getProxy 方法。该方法基于 CGLib 的 Enhancer 类创建代理对象，属于 CGLib
+ * 的标准使用模式，因为有多个 callback 实现，所以这里使用了 CallbackFilter 模式，
+ * 依据场景选择并应用对应的 callback 拦截器。
+ *
+ * 我们重点关注 callback 的实现，位于 CglibAopProxy#getCallbacks 方法中。
+ * 受制于 CGLib 在执行时一次只允许应用一个 callback 的约束，所以该方法依据参数配置实现了一组
+ * callback，以覆盖不同的场景。核心的 AOP callback 实现是 DynamicAdvisedInterceptor 类，
+ * 它实现了 MethodInterceptor 接口，对应的 DynamicAdvisedInterceptor#intercept 方法实现如下：
+ *
  * @author Oliver Gierke
  * @author Juergen Hoeller
  * @since 4.0

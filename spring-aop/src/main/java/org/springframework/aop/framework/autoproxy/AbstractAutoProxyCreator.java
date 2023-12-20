@@ -476,11 +476,14 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		proxyFactory.copyFrom(this);
 		// 决定对于给定的 bean 是否应该使用 targetClass 而不是它的接口代理，
 		// 检查 proxyTargetClass 设置以及 preserveTargetClass 属性
+		// proxy-target-class = false，表示使用 JDK 原生动态代理
 		if (!proxyFactory.isProxyTargetClass()) {
+			// 检测当前 bean 是否应该基于类而非接口生成代理对象，即包含 preserveTargetClass=true 属性
 			if (shouldProxyTargetClass(beanClass, beanName)) {
 				proxyFactory.setProxyTargetClass(true);
 			}
 			else {
+				// 如果是基于接口生成代理，则添加需要代理的接口到 ProxyFactory 中（除内置 callback 接口、语言内在接口，以及标记接口）
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
 		}
@@ -499,7 +502,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (advisorsPreFiltered()) {
 			proxyFactory.setPreFiltered(true);
 		}
-
+		// 基于 ProxyFactory 创建代理类
 		return proxyFactory.getProxy(getProxyClassLoader());
 	}
 
@@ -534,6 +537,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	/**
 	 * Determine the advisors for the given bean, including the specific interceptors
 	 * as well as the common interceptor, all adapted to the Advisor interface.
+	 *
+	 * Spring 定义了非常多的拦截器、增强器，以及增强方法等，这里通过 AbstractAutoProxyCreator#buildAdvisors
+	 * 方法统一将他们封装成 Advisor 对象，从而简化代理的创建过程。
+	 * 封装的核心步骤由 DefaultAdvisorAdapterRegistry#wrap 方法实现
+	 *
 	 * @param beanName the name of the bean
 	 * @param specificInterceptors the set of interceptors that is
 	 * specific to this bean (may be empty, but not null)

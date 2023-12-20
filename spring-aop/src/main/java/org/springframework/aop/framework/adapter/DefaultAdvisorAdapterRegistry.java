@@ -69,7 +69,8 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 			// 如果是 MethodInterceptor 类型则使用 DefaultPointcutAdvisor 封装
 			return new DefaultPointcutAdvisor(advice);
 		}
-		//如果存在 Advisor 的适配器那么也同样需要进行封装
+		// 如果存在 Advisor 的适配器那么也同样需要进行封装
+		// 否则遍历注册的适配器，如果存在关联的适配器则使用 DefaultPointcutAdvisor 进行包装
 		for (AdvisorAdapter adapter : this.adapters) {
 			// Check that it is supported.
 			if (adapter.supportsAdvice(advice)) {

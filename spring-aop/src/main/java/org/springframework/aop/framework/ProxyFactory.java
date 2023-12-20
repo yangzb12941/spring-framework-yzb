@@ -107,7 +107,8 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * @return the proxy object
 	 */
 	public Object getProxy(@Nullable ClassLoader classLoader) {
-		return createAopProxy().getProxy(classLoader);
+		return createAopProxy() // 1. 创建 AOP 代理。Spring 默认提供了两种 AOP 代理实现，即 java 原生代理和 CGLib 代理；
+				.getProxy(classLoader);// 2. 基于 AOP 代理创建目标类的增强代理对象
 	}
 
 
