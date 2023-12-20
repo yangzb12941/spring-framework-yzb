@@ -30,6 +30,9 @@ import org.springframework.util.Assert;
  * Used internally by the AOP framework; application developers should not need
  * to use this class directly.
  *
+ * 这里执行的增强方法就对应着 AspectJMethodBeforeAdvice#before 方法，
+ * 该方法会依据切点配置将相应的参数绑定传递给我们自定义的增强方法，并最终通过反射调用触发执行。
+ *
  * @author Rod Johnson
  * @see AfterReturningAdviceInterceptor
  * @see ThrowsAdviceInterceptor
@@ -53,7 +56,9 @@ public class MethodBeforeAdviceInterceptor implements MethodInterceptor, BeforeA
 
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
+		// 执行增强方法
 		this.advice.before(mi.getMethod(), mi.getArguments(), mi.getThis());
+		// 执行目标方法
 		return mi.proceed();
 	}
 

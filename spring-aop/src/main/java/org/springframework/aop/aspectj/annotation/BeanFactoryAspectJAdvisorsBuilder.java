@@ -77,9 +77,11 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 	 * Look for AspectJ-annotated aspect beans in the current bean factory,
 	 * and return to a list of Spring AOP Advisors representing them.
 	 * <p>Creates a Spring Advisor for each AspectJ advice method.
-	 * 1、获取所有 beanName，这一步骤中所有在 beanFactory 中注册的 bean 都会被提取出来遍历所有 beanName，并找出声明 AspectJ 注解的类，进行进一步的处理。
-	 * 2、对标记为 AspectJ 注解的类进行增强器的提取。
-	 * 3.将提取结果加入缓存。
+	 * 1、获取所有类型 bean 实例对应的 beanName 集合；
+	 * 2、过滤不是切面类型的 bean 对应的 beanName，即没有被 @Aspect 注解，或包含以 ajc$ 开头的字段，
+	 *   同时支持覆盖 BeanFactoryAspectJAdvisorsBuilder#isEligibleBean 方法扩展过滤规则；
+	 * 3、对于切面 bean 类型，获取 bean 中定义的所有切点，并为每个切点生成对应的增强器；
+	 * 4、缓存解析得到的增强器，避免重复解析。
 	 * @return the list of {@link org.springframework.aop.Advisor} beans
 	 * @see #isEligibleBean
 	 */

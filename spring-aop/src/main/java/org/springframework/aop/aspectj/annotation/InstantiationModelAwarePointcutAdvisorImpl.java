@@ -82,6 +82,10 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 
 	/**
 	 * 根据切点信息生成增强。 所有的增强都由 Advisor 的实现类 InstantiationModelAwarePointcutAdvisorImpl 统一封装的。
+	 * 拿到切点注解定义之后，方法会依据切点的配置信息使用 InstantiationModelAwarePointcutAdvisorImpl 实现类创建对应的增强器。
+	 * 类 InstantiationModelAwarePointcutAdvisorImpl 的实例化过程除了初始化了一些基本属性之外，
+	 * 主要是调用了 InstantiationModelAwarePointcutAdvisorImpl#instantiateAdvice 方法，
+	 * 依据增强类型对增强器实施相应的初始化操作：
 	 * @param declaredPointcut
 	 * @param aspectJAdviceMethod
 	 * @param aspectJAdvisorFactory

@@ -67,7 +67,6 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		this.advisorRetrievalHelper = new BeanFactoryAdvisorRetrievalHelperAdapter(beanFactory);
 	}
 
-
 	@Override
 	@Nullable
 	protected Object[] getAdvicesAndAdvisorsForBean(
@@ -97,11 +96,14 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
 		//在 findCandidateAdvisors 函数中完成的就是获取增强器的功能。
+		// 获取所有候选的 Advisor（包括注解的、XML 中配置的）
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
 		// 当找到对应的增强器后，接来的任务就是看这些增强器是再与对应的 class 匹配了，当然
 		// 不只是 class , class 内部的方法如果匹配也可以通过验证。
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
+		// 如果 Advisor 不为空，则在最前面追加一个 ExposeInvocationInterceptor
 		extendAdvisors(eligibleAdvisors);
+		// 对 Advisor 进行排序
 		if (!eligibleAdvisors.isEmpty()) {
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
@@ -120,6 +122,12 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	/**
 	 * Search the given candidate Advisors to find all Advisors that
 	 * can apply to the specified bean.
+	 *
+	 * AbstractAdvisorAutoProxyCreator#findEligibleAdvisors 方法，
+	 * 上面的过程我们分析了获取所有类型增强器的过程，但是这些增强器不一定都适用于当前 bean 实例，
+	 * 我们需要依据切点配置信息对其进行筛选。这一过程位于
+	 * AbstractAdvisorAutoProxyCreator#findAdvisorsThatCanApply
+	 *
 	 * @param candidateAdvisors the candidate Advisors
 	 * @param beanClass the target's bean class
 	 * @param beanName the target's bean name

@@ -452,7 +452,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * 3. 封装 Advisor 并加入到 ProxyFactory 中。
 	 * 4. 设置要代理的类。
 	 * 5. 当然在 Spring 中还为子类提供了定制的函数 customizeProxyFactory，子类可以在此函
-	 * 数中进行对 ProxyFactory 的进一步封装。
+	 *    数中进行对 ProxyFactory 的进一步封装。
 	 * 6. 进行获取代理操作。
 	 *
 	 * @param beanClass the class of the bean
@@ -470,9 +470,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
-
+		// ProxyFactory 用于为目标 bean 实例创建代理对象
 		ProxyFactory proxyFactory = new ProxyFactory();
-		//获取当前类中相关属性
+		// 获取当前类中相关属性
 		proxyFactory.copyFrom(this);
 		// 决定对于给定的 bean 是否应该使用 targetClass 而不是它的接口代理，
 		// 检查 proxyTargetClass 设置以及 preserveTargetClass 属性

@@ -85,7 +85,14 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 				new BeanFactoryAspectJAdvisorsBuilderAdapter(beanFactory, this.aspectJAdvisorFactory);
 	}
 
-
+	/**
+	 * 方法首先调用了父类的实现，这主要是为了兼容父类查找候选增强器的规则，
+	 * 例如我们的示例中使用的是注解方式定义的增强，但是父类却是基于 XML 配置的方式查找增强器，
+	 * 这里的兼容能够让我们在以注解方式编程时兼容其它以 XML 配置的方式定义的增强。
+	 * 下面还是将主要精力放在解析注解式增强定义上，该过程位于 BeanFactoryAspectJAdvisorsBuilder#buildAspectJAdvisors
+	 * 方法中。
+	 * @return
+	 */
 	@Override
 	protected List<Advisor> findCandidateAdvisors() {
 		// Add all the Spring advisors found according to superclass rules.

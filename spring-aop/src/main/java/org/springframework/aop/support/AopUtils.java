@@ -216,6 +216,13 @@ public abstract class AopUtils {
 	 * <p>This is an important test as it can be used to optimize
 	 * out a pointcut for a class.
 	 *
+	 * 方法首先会使用类过滤器（ClassFilter）筛选引介增强器，除了我们手动注册的类过滤器外，
+	 * 这里默认还会使用 TypePatternClassFilter 类过滤器执行过滤操作。然后，方法会过滤筛选其它类型的增强器，
+	 * 这里除了使用类过滤器外，考虑方法级别增强的定义形式，还会使用方法匹配器（MethodMatcher）进行筛选。
+	 * 如果增强器适用于当前 bean 类型，则将其加入到集合中用于下一步为当前 bean 创建增强代理对象。
+	 * 如果没有任何一个增强器适用于当前 bean 类型，则方法 AbstractAdvisorAutoProxyCreator#getAdvicesAndAdvisorsForBean
+	 * 最终会返回值为 null 的 DO_NOT_PROXY 数组对象，表示当前 bean 不需要被增强。
+	 *
 	 * 那么，使用 TransactionAttributeSourcePointcut 类型的实例作为函数参数继续跟踪 canApply。
 	 *
 	 * 通过下面函数大致可以理清大体脉络，
@@ -289,6 +296,7 @@ public abstract class AopUtils {
 	 * Can the given advisor apply at all on the given class?
 	 * <p>This is an important test as it can be used to optimize out a advisor for a class.
 	 * This version also takes into account introductions (for IntroductionAwareMethodMatchers).
+	 *
 	 * @param advisor the advisor to check
 	 * @param targetClass class we're testing
 	 * @param hasIntroductions whether or not the advisor chain for this bean includes
@@ -297,10 +305,12 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
 		if (advisor instanceof IntroductionAdvisor) {
+			//方法首先会使用类过滤器（ClassFilter）筛选引介增强器
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
 		else if (advisor instanceof PointcutAdvisor) {
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
+			//
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
 		else {
@@ -321,11 +331,12 @@ public abstract class AopUtils {
 	 * (may be the incoming List as-is)
 	 */
 	public static List<Advisor> findAdvisorsThatCanApply(List<Advisor> candidateAdvisors, Class<?> clazz) {
+		// 没有候选的增强器，直接返回
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
 		List<Advisor> eligibleAdvisors = new ArrayList<>();
-		//首先处理引介增强
+		//1、首先处理引介增强
 		for (Advisor candidate : candidateAdvisors) {
 			//findAdvisorsThatCanApply 函数的主要功能是寻找所有增强器中适用于当前 class 的增强
 			//器。 引介增强与普通的增强处理是不一样的 ， 所以分开处理。 而对于真正的匹配在 canApply 中实现。
@@ -333,7 +344,9 @@ public abstract class AopUtils {
 				eligibleAdvisors.add(candidate);
 			}
 		}
+		// 表示是否含有引介增强
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
+		// 2. 筛选其它类型的增强器
 		for (Advisor candidate : candidateAdvisors) {
 			//引介增强已经处理
 			if (candidate instanceof IntroductionAdvisor) {

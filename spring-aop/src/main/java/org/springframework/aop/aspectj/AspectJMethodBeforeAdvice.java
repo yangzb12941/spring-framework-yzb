@@ -34,6 +34,10 @@ public class AspectJMethodBeforeAdvice extends AbstractAspectJAdvice implements 
 
 	/**
 	 * AspectJMethodBeforeAdvice 中完成了增强方法的逻辑。
+	 *
+	 * AspectJMethodBeforeAdvice 增强类关联注册的处理器是 MethodBeforeAdviceInterceptor，
+	 * 当我们调用一个被前置增强的目标方法时，MethodBeforeAdviceInterceptor#invoke 方法会被触发：
+	 *
 	 * @param aspectJBeforeAdviceMethod
 	 * @param pointcut
 	 * @param aif
