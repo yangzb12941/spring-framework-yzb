@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<!--<aop:aspectj-autoproxy proxy-target-class="true" expose-proxy="true"/>-->
+
+	<!--1.把所有类的对象交给IOC容器进行管理-->
+	<bean id="logger" class="org.springframework.aop.yangzbxmlaop.Loger"/>
+	<bean id="bookService" class="org.springframework.aop.yangzbxmlaop.BookServiceImpl"/>
+	<!--2.AOP的配置：让增强类 的 哪个方法  动态进行何种增强   核心类 的 哪个方法-->
+	<aop:config>
+		<!--配置 增强类的哪个方法  对  核心类的哪个方法  进行  何种增强-->
+		<aop:pointcut id="pt1" expression="execution(* org.springframework.aop.yangzbxmlaop.*.*(..))"/>
+		<aop:aspect id="log" ref="logger">
+<!--		<aop:before method="check" pointcut="execution(* *..IBookService.*(..))"/>
+			<aop:after-returning method="logPrint" pointcut="execution(* *..IBookService.*(..))"/>
+			<aop:after-throwing method="exception" pointcut="execution(* *..IBookService.*(..))"/>
+			<aop:after method="distory" pointcut="execution(* *..IBookService.*(..))"/>-->
+			<!--环绕增强-->
+			<!--<aop:around method="around" pointcut="execution(* org.springframework.aop.yangzbxmlaop.*.*(..))"/>-->
+			<aop:around method="check" pointcut-ref="pt1"/>
+		</aop:aspect>
+	</aop:config>
+
+</beans>
