@@ -281,6 +281,14 @@ class CglibAopProxy implements AopProxy, Serializable {
 		}
 	}
 
+	/**
+	 * callback 的实现，位于 CglibAopProxy#getCallbacks 方法中。受制于 CGLib 在执行时一次只允许应用一个 callback 的约束，
+	 * 所以该方法依据参数配置实现了一组 callback，以覆盖不同的场景。核心的 AOP callback 实现是 DynamicAdvisedInterceptor 类，
+	 * 它实现了 MethodInterceptor 接口 对应的 DynamicAdvisedInterceptor#intercept 方法.
+	 * @param rootClass
+	 * @return
+	 * @throws Exception
+	 */
 	private Callback[] getCallbacks(Class<?> rootClass) throws Exception {
 		// Parameters used for optimization choices...
 		// 对于 expose-proxy 属性的处理
