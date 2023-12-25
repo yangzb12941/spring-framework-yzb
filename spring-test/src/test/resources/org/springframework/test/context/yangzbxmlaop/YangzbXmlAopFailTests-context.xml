@@ -13,12 +13,12 @@
 	<!--<aop:aspectj-autoproxy proxy-target-class="true" expose-proxy="true"/>-->
 
 	<!--1.把所有类的对象交给IOC容器进行管理-->
-	<bean id="logger" class="org.springframework.aop.yangzbxmlaop.Loger"/>
-	<bean id="bookService" class="org.springframework.aop.yangzbxmlaop.BookServiceImpl"/>
+	<bean id="logger" class="org.springframework.test.context.yangzbxmlaop.Loger"/>
+	<bean id="bookService" class="org.springframework.test.context.yangzbxmlaop.BookServiceImpl"/>
 	<!--2.AOP的配置：让增强类 的 哪个方法  动态进行何种增强   核心类 的 哪个方法-->
 	<aop:config>
 		<!--配置 增强类的哪个方法  对  核心类的哪个方法  进行  何种增强-->
-		<aop:pointcut id="pt1" expression="execution(* org.springframework.aop.yangzbxmlaop.*.*(..))"/>
+		<aop:pointcut id="pt1" expression="execution(* org.springframework.test.context.yangzbxmlaop.BookServiceImpl.*(..))"/>
 		<aop:aspect id="log" ref="logger">
 <!--		<aop:before method="check" pointcut="execution(* *..IBookService.*(..))"/>
 			<aop:after-returning method="logPrint" pointcut="execution(* *..IBookService.*(..))"/>

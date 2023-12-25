@@ -10,10 +10,10 @@
 	<aop:aspectj-autoproxy proxy-target-class="true" expose-proxy="true"/>
 
 	<!-- 配置srping的Ioc,把service对象配置进来-->
-	<bean id="accountService" class="org.springframework.aop.yangzbxmlaop.AccountServiceImpl"/>
+	<bean id="accountService" class="org.springframework.test.context.yangzbxmlaop.AccountServiceImpl"/>
 
 	<!-- 配置Logger类 -->
-	<bean id="logger" class="org.springframework.aop.yangzbxmlaop.Logger"/>
+	<bean id="logger" class="org.springframework.test.context.yangzbxmlaop.Logger"/>
 
 	<!--配置AOP-->
 	<aop:config>
@@ -22,20 +22,20 @@
 			  它还可以写在aop:aspect外面，此时就变成了所有切面可用
 			   这个标签必须出现在切面之前
 		  -->
-		<aop:pointcut id="pt1" expression="execution(* org.springframework.aop.yangzbxmlaop.*.*(..))"/>
+		<aop:pointcut id="pt1" expression="execution(* org.springframework.test.context.yangzbxmlaop.AccountServiceImpl.*(..))"/>
 		<!--配置切面 -->
 		<aop:aspect id="logAdvice" ref="logger">
 			<!-- 配置前置通知：在切入点方法执行之前执行-->
 			<aop:before method="beforePrintLog" pointcut-ref="pt1"/>
 
-			<!-- 配置后置通知：在切入点方法正常执行之后值。它和异常通知永远只能执行一个-->
+<!--			&lt;!&ndash; 配置后置通知：在切入点方法正常执行之后值。它和异常通知永远只能执行一个&ndash;&gt;
 			<aop:after-returning method="afterReturningPrintLog" pointcut-ref="pt1"/>
 
-			<!-- 配置异常通知：在切入点方法执行产生异常之后执行。它和后置通知永远只能执行一个-->
+			&lt;!&ndash; 配置异常通知：在切入点方法执行产生异常之后执行。它和后置通知永远只能执行一个&ndash;&gt;
 			<aop:after-throwing method="afterThrowingPrintLog" pointcut-ref="pt1"/>
 
-			<!-- 配置最终通知：无论切入点方法是否正常执行它都会在其后面执行-->
-			<aop:after method="afterPrintLog" pointcut-ref="pt1"/>
+			&lt;!&ndash; 配置最终通知：无论切入点方法是否正常执行它都会在其后面执行&ndash;&gt;
+			<aop:after method="afterPrintLog" pointcut-ref="pt1"/>-->
 
 			<!-- 配置环绕通知 详细的注释请看Logger类中-->
 			<!--<aop:around method="aroundPringLog" pointcut-ref="pt1"/>-->
