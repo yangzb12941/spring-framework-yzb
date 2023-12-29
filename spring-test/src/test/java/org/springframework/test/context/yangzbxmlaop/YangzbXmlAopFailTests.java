@@ -34,9 +34,11 @@ public class YangzbXmlAopFailTests {
 	public void testProxy_1() throws Exception {
 		ApplicationContext context = new GenericXmlApplicationContext(
 				qualifiedResource(YangzbXmlAopFailTests.class, "context.xml"));
+		//切面类不能自己增强自己
+		//Loger bean = (Loger)context.getBean("logger");
+		//bean.check();
 
 		IBookService bean = (IBookService)context.getBean("bookService");
-
 		bean.find();
 	}
 }

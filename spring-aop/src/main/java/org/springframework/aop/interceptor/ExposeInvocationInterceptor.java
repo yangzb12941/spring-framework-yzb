@@ -37,6 +37,11 @@ import org.springframework.core.PriorityOrdered;
  *
  * <p>If used, this interceptor will normally be the first in the interceptor chain.
  *
+ * 将当前｛@link org.aopalliance.intercept.MethodInvocation｝公开为线程本地对象的拦截器。
+ * 我们偶尔需要这样做；例如，当切入点（例如AspectJ表达式切入点）需要知道完整的调用上下文时<p> 除非真的有必要，
+ * 否则不要使用这个拦截器。目标对象通常不应该知道Spring AOP，因为这会创建对Spring API的依赖。
+ * 目标对象应尽可能是普通的POJO<p> 如果使用，此拦截器通常将是拦截器链中的第一个。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  */

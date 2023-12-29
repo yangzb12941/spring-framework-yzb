@@ -1047,7 +1047,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// (such as a PropertyPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
 
-		// 如果之前没有bean后处理器（如PropertyPlaceholderConfigurer bean）注册任何，
+		// 如果之前没有注册任何bean后处理器（如PropertyPlaceholderConfigurer bean），
 		// 则注册默认的嵌入值解析器：此时，主要用于注释属性值中的解析。
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));

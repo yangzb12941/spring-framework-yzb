@@ -125,9 +125,9 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 	 */
 	@Override
 	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
-		// Spring 是如何选取的呢？现在我们就从惊代码的角度分析，看看到底 Spring 是如何选择代理方式的。
+		// Spring 是如何选取的呢？现在我们就从代码的角度分析，看看到底 Spring 是如何选择代理方式的。
 		// 从 if 中的判断条件可以看到 3 个方面影响着 Spring 的判断。
-		// 1、optimize ： 用来控制通过 CGLIB 创建的代理是否使用激进的优化策略。 除非完全了解 AOP 代理如何处理优化，否则不推荐用户使用这个设直。
+		// 1、optimize ： 用来控制通过 CGLIB 创建的代理是否使用激进的优化策略。 除非完全了解 AOP 代理如何处理优化，否则不推荐用户使用这个设置。
 		// 目前这个属性仅用于 CGLIB 代理，对于 JDK 动态代理（默认代理）无效。
 		// 2、proxyTargetClass ： 这个属性为 true 时， 目标类本身被代理而不是目标类的接口 。 如果这个属性值被设为 true, CGLIB 代理将被创建，
 		// 设直方式为<aop:aspectj-autoproxy-proxy-target-class＝”true”/>。
