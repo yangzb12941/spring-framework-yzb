@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <bean id="schemaBasedAopTarget" class="org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop.SchemaBasedAopTarget"></bean>
+
+    <!-- 创建前置通知类bean -->
+    <bean id="myBeforeAdvisor" class="org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop.MyBeforeAdvisor"></bean>
+
+    <!-- 创建 后置通知类bean -->
+    <bean id="myAfterAdvisor" class="org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop.MyAfterAdvisor"></bean>
+
+    <aop:config>
+        <!-- 使用<aop:pointcut>来设置切点：
+            满足条件：访问权限，返回类型任意，包名+类名+方法名+参数类型    (访问权限可省，默认为public)-->
+        <aop:pointcut expression="execution(public * org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop.SchemaBasedAopTarget.aopMethodBefore(..))" id="point_cut_before"/>
+
+        <aop:pointcut expression="execution(* org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop.SchemaBasedAopTarget.aopMethodAfter(..))" id="point_cut_after"/>
+
+        <!-- 为指定的切点 设置通知， 直接引用自己创建的通知bean， 运行时会自动判断是前置通知和后置通知 -->
+        <aop:advisor advice-ref="myBeforeAdvisor" pointcut-ref="point_cut_before"/>
+        <aop:advisor advice-ref="myAfterAdvisor" pointcut-ref="point_cut_after"/>
+    </aop:config>
+</beans>

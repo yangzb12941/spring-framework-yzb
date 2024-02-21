@@ -1,0 +1,5 @@
+在Spring中，有两种方式可以实现AOP，分别是schema-based、aspectJ，这两种方式的区别在于：
+
+　　1、schema-based方式：每个通知（advicor）都需要我们自己创建接口或者类；并且在配置的时候，如果使用xml配置，schema-based方式是在<aop:config>标签中配置的。
+
+　　2、aspectJ方式：不需要我们为每个通知创建接口或者类；在配置的时候，如果使用xml配置，aspectJ方式是在<aop:aspect>标签中配置的。

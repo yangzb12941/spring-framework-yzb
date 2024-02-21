@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<bean id="accountService" class="org.springframework.aop.yangzbxmlaop.AccountServiceImpl"></bean>
+
+	<!-- 创建通用通知类 -->
+	<bean id="logger" class="org.springframework.aop.yangzbxmlaop.Logger"></bean>
+
+	<aop:config>
+		<!-- 如果使用aspectJ方式，就要使用<aop:aspect>标签 -->
+		<aop:aspect ref="logger">
+			<!-- 设置cn.ganlixin.test包下的Demo类中的所有方法都为切点方法 -->
+			<aop:pointcut id="point_cut" expression="execution(* org.springframework.aop.yangzbxmlaop.AccountServiceImpl.*(..))" />
+
+			<aop:before method="beforePrintLog" pointcut-ref="point_cut"/>
+			<aop:after method="afterPrintLog" pointcut-ref="point_cut"/>
+			<!--<aop:after-returning method="myafterReturning" pointcut-ref="point_cut"/>
+			<aop:after-throwing method="mythrow" pointcut-ref="point_cut"/>-->
+			<!-- 设置前置和后置之后，不要再设置around
+				<aop:around method="myaround" pointcut-ref="point_cut"/>
+			-->
+		</aop:aspect>
+	</aop:config>
+
+</beans>

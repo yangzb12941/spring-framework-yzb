@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <bean id="aspectJAopTarget" class="org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.AspectJAopTarget"></bean>
+
+    <!-- 创建前置通知类bean -->
+    <bean id="myAdvisor" class="org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.MyAdvisor"></bean>
+
+    <aop:config>
+        <!-- 如果使用aspectJ方式，就要使用<aop:aspect>标签 -->
+        <aop:aspect ref="myAdvisor">
+            <!-- 设置cn.ganlixin.test包下的Demo类中的所有方法都为切点方法 -->
+            <aop:pointcut id="point_cut" expression="execution(* org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.AspectJAopTarget.*(..))" />
+            <aop:before method="mybefore" pointcut-ref="point_cut"/>
+            <aop:after method="myafter" pointcut-ref="point_cut"/>
+            <aop:after-returning method="myafterReturnging" pointcut-ref="point_cut"/>
+            <aop:after-throwing method="mythrow" pointcut-ref="point_cut"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
