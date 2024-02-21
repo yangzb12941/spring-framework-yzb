@@ -203,6 +203,15 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * <bean id="test" class="test.TestBean"></bean>
 	 * 另一类就是自定义的，如：
 	 * <tx:annotation-driven/>
+	 *  总结一下：自定义标签的解析需要 定义三个文件和实现两个接口
+	 *  文件 xsd、Spring.handlers、Spring.schemas
+	 *  接口 BeanDefinitionParser、NamespaceHandlerSupport
+	 *  AOP 标签解析 Spring.handlers 文件内容如下：指定NameSpace的处理类
+	 *  http\://www.springframework.org/schema/aop=org.springframework.aop.config.AopNamespaceHandler
+	 *  Spring.schemas 文件内容如下：xsd文件的版本管理
+	 *  http\://www.springframework.org/schema/aop/spring-aop-2.0.xsd=org/springframework/aop/config/spring-aop.xsd
+	 *  http\://www.springframework.org/schema/aop/spring-aop-2.5.xsd=org/springframework/aop/config/spring-aop.xsd
+	 *  ......
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
 		//对beans的处理
@@ -234,11 +243,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						//法会用原生态的方式去解析定义好的XML文件，然后转化为配置对象。这种方式当然可以解
 						//决所有问题，但实现起来比较烦琐，特别是在配置非常复杂的时候，解析工作是一个不得不考
 						//虑的负担。spring提供了可扩展Schema的支持，这是一个不错的折中方案，扩展Spring自定
-						//义标签配置大致需要以下几个步骤（前提是要把Spring的Core包加人项目中）。
-						//1、创建一个需要扩展的组件。
+						//义标签配置大致需要以下几个步骤（前提是要把Spring的Core包加入项目中）。
+						//1、创建一个需要扩展的组件(标签)。
 						//2、定义一个XSD文件描述组件内容。
-						//3、创建一个文件，实现BeanDefinitionParser接口，用来解析XSD文件中的定义和组件定义。
-						//4、创建一个Handler文件，扩展自NamespaceHandlerSupport，目的是将组件注册到Spring容器。
+						//3、创建一个文件，实现 BeanDefinitionParser 接口，用来解析XSD文件中的定义和组件(标签)定义。
+						//4、创建一个Handler文件，扩展自 NamespaceHandlerSupport ，目的是将组件注册到Spring容器。
 						//5、编写Spring.handlers和Spring.schemas文件。
 						delegate.parseCustomElement(ele);
 					}
