@@ -16,11 +16,12 @@
         <!-- 如果使用aspectJ方式，就要使用<aop:aspect>标签 -->
         <aop:aspect ref="myAdvisor">
             <!-- 设置cn.ganlixin.test包下的Demo类中的所有方法都为切点方法 -->
-            <aop:pointcut id="point_cut" expression="execution(* org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.AspectJAopTarget.*(..))" />
+            <!--<aop:pointcut id="point_cut" expression="execution(* org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.AspectJAopTarget.*(..))" />-->
+			<aop:pointcut id="point_cut" expression="execution(* org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop.AspectJAopTarget.aopMethodBefore(..))" />
             <aop:before method="mybefore" pointcut-ref="point_cut"/>
-            <aop:after method="myafter" pointcut-ref="point_cut"/>
+            <!--<aop:after method="myafter" pointcut-ref="point_cut"/>
             <aop:after-returning method="myafterReturnging" pointcut-ref="point_cut"/>
-            <aop:after-throwing method="mythrow" pointcut-ref="point_cut"/>
+            <aop:after-throwing method="mythrow" pointcut-ref="point_cut"/>-->
         </aop:aspect>
     </aop:config>
 </beans>

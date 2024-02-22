@@ -258,6 +258,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
+		//如果我们有自定义的TargetSource，请在此处创建代理。
+        //阻止不必要的目标bean的默认实例化：TargetSource将以自定义方式处理目标实例。
 		TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
 		if (targetSource != null) {
 			if (StringUtils.hasLength(beanName)) {
@@ -289,13 +291,14 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	/**
 	 * Create a proxy with the configured interceptors if the bean is
-	 * identified as one to proxy by the subclass.
+	 * identified as one to proxy by the subclass. 如果bean被子类标识为要代理的bean，则使用配置的拦截器创建一个代理。
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
 	@Override
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
+		// 如果 beanName 不为空则直接使用 beanName（FactoryBean 则使用 &{beanName}），否则使用 bean 的 className
 		if (bean != null) {
-			// 如果 beanName 不为空则直接使用 beanName（FactoryBean 则使用 &{beanName}），否则使用 bean 的 className
+			// 根据给定的bean的class和name构建出一个key,格式：beanClassName_beanName
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
 				// 如果它合适被代理，则需要封装指定bean
@@ -401,6 +404,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * a circular reference or if the existing target instance needs to be preserved.
 	 * This implementation returns {@code false} unless the bean name indicates an
 	 * "original instance" according to {@code AutowireCapableBeanFactory} conventions.
+	 *
+	 * 如果给定的bean不应被此后处理器考虑进行自动代理，则子类应重写此方法以返回{@code true}
+	 * <p> 有时我们需要能够避免这种情况的发生，例如，如果它将导致循环引用，或者如果需要保留现有的目标实例。
+	 * 此实现返回｛@code false｝，除非bean名称根据｛@code-AutowireCapableBeanFactory｝约定指示“原始实例”。
+	 *
 	 * @param beanClass the class of the bean
 	 * @param beanName the name of the bean
 	 * @return whether to skip the given bean

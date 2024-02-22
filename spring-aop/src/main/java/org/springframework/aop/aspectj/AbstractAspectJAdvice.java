@@ -193,6 +193,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Build a 'safe' pointcut that excludes the AspectJ advice method itself.
+	 * 构建一个“安全”的切入点，排除AspectJ advice方法本身。
 	 * @return a composable pointcut that builds on the original AspectJ expression pointcut
 	 * @see #getPointcut()
 	 */
