@@ -12,7 +12,7 @@
     <!-- 创建前置通知类bean -->
     <bean id="myAdvisor" class="org.springframework.test.yzb.DynamicProxy.SpringJDKProxy.AspectJAop.MyAdvisor"></bean>
 
-    <aop:config>
+	<aop:config>
         <!-- 如果使用aspectJ方式，就要使用<aop:aspect>标签 -->
         <aop:aspect ref="myAdvisor">
             <!-- 设置cn.ganlixin.test包下的Demo类中的所有方法都为切点方法 -->
