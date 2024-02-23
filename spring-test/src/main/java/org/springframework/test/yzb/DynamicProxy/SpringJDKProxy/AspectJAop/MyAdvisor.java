@@ -1,4 +1,4 @@
-package org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.AspectJAop;
+package org.springframework.test.yzb.DynamicProxy.SpringJDKProxy.AspectJAop;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 

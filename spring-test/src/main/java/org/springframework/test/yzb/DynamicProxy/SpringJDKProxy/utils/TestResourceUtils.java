@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.utils;
+package org.springframework.test.yzb.DynamicProxy.SpringJDKProxy.utils;
 
 import org.springframework.core.io.ClassPathResource;
 

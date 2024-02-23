@@ -1,4 +1,4 @@
-package org.springframework.test.proxy.DynamicProxy.SpringJDKProxy.SchemaBasedAop;
+package org.springframework.test.yzb.DynamicProxy.SpringJDKProxy.SchemaBasedAop;
 
 import org.springframework.aop.MethodBeforeAdvice;
 
