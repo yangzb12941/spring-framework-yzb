@@ -37,6 +37,10 @@ import org.springframework.util.Assert;
  * allowing a caller to request a particular auto-proxy creator and know that creator,
  * <i>or a more capable variant thereof</i>, will be registered as a post-processor.
  *
+ * 用于处理AOP自动代理创建者注册的实用程序类<p> 应该只注册一个自动代理创建者，但可以使用多个具体实现。
+ * 此类提供了一个简单的升级协议，允许调用方请求特定的自动代理创建者，并知道创建者
+ * <i>或其更强大的变体<i>将被注册为后处理器。
+ *
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @author Mark Fisher
@@ -62,7 +66,6 @@ public abstract class AopConfigUtils {
 		APC_PRIORITY_LIST.add(AspectJAwareAdvisorAutoProxyCreator.class);
 		APC_PRIORITY_LIST.add(AnnotationAwareAspectJAutoProxyCreator.class);
 	}
-
 
 	@Nullable
 	public static BeanDefinition registerAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry) {
